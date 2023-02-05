@@ -4,8 +4,7 @@ from flask_jwt_extended import JWTManager,jwt_required,create_access_token
 from flask_mail import Mail, Message
 from sqlalchemy import Column, Integer,String, Float, Boolean
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-import sendgrid
-from sendgrid.helpers.mail import *
+
 
 import pickle
 import numpy as np
@@ -14,11 +13,9 @@ import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-import datetime
-import requests
 from functools import wraps
 import re 
-
+import datetime
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -77,10 +74,12 @@ class User(db.Model):
     email=Column(String(50), unique=True)
     password=Column(String(50))
 
-class Analytics(db.Model):
+class Incidents(db.Model):
     id=Column(Integer, primary_key=True)
-    user_id=Column(String(50), unique=True)
-    count = Column(Integer)
+    user_id=Column(String(50), unique=False)
+    date = Column(String(50))
+    classification = Column(String(50))
+    image_url = Column(String)
     
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -127,27 +126,23 @@ def login():
     else:
         return jsonify(message='Your email or password is incorrect'),401
 
-@app.route('/api/count', methods=['POST'])
+@app.route('/api/distraction', methods=['POST'])
 @token_required
 def analysis(current_user):
     json_data = request.get_json()
-    distractions = int(json_data['distractions'])
+    now = datetime.datetime.now()
 
     user_data={}
     user_data['public_id']=current_user.public_id
 
-    userMetric=Analytics.query.filter_by(user_id=user_data['public_id']).first()
+    newTrackData=Incidents(
+    user_id=user_data['public_id'],
+    date = now.strftime("%d/%m/%Y %H:%M:%S"),
+    classification = json_data['classification'],
+    image_url = json_data['image_url'])
 
-    if userMetric:
-        userMetric.count = userMetric.count + distractions
-        db.session.commit()
-        return jsonify(message="Data updated"),201
-    else:
-        newTrackData=Analytics(
-        user_id=user_data['public_id'],
-        count = distractions
-        )
-        db.session.add(newTrackData)
-        db.session.commit()
-        return jsonify(message='Data Added'),201
+    db.session.add(newTrackData)
+    db.session.commit()
+
+    return jsonify(message='Data Added'),201
 
