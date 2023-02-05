@@ -141,7 +141,7 @@ def analysis(current_user):
     if userMetric:
         userMetric.count = userMetric.count + distractions
         db.session.commit()
-        return (jsonify(message="Data updated"))
+        return jsonify(message="Data updated"),201
     else:
         newTrackData=Analytics(
         user_id=user_data['public_id'],
@@ -150,3 +150,4 @@ def analysis(current_user):
         db.session.add(newTrackData)
         db.session.commit()
         return jsonify(message='Data Added'),201
+
