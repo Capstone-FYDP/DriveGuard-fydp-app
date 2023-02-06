@@ -4,8 +4,7 @@ from flask_jwt_extended import JWTManager,jwt_required,create_access_token
 from flask_mail import Mail, Message
 from sqlalchemy import Column, Integer,String, Float, Boolean
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-import sendgrid
-from sendgrid.helpers.mail import *
+
 
 import pickle
 import numpy as np
@@ -14,11 +13,9 @@ import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-import datetime
-import requests
 from functools import wraps
 import re 
-
+import datetime
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -28,7 +25,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY']='secret-key'
 regex = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args,**kwargs):
+        token=None
+        if 'x-access-tokens' in request.headers:
+            token=request.headers['x-access-tokens']
+        if not token:
+            return jsonify(message='Token is missing'),401
+        try:
+            data=jwt.decode(token, app.config['SECRET_KEY'])
+            current_user=User.query.filter_by(public_id=data['public_id']).first()
+        except:
+            return jsonify(message='Token is invalid'),401
 
+        return f(current_user, *args, **kwargs)
+    return decorated
 
 db=SQLAlchemy(app)
 @app.cli.command('dbCreate')
@@ -61,6 +73,13 @@ class User(db.Model):
     lastName=Column(String(50))
     email=Column(String(50), unique=True)
     password=Column(String(50))
+
+class Incidents(db.Model):
+    id=Column(Integer, primary_key=True)
+    user_id=Column(String(50), unique=False)
+    date = Column(String(50))
+    classification = Column(String(50))
+    image_url = Column(String)
     
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -106,3 +125,24 @@ def login():
         return jsonify(token=token.decode('UTF-8'))
     else:
         return jsonify(message='Your email or password is incorrect'),401
+
+@app.route('/api/distraction', methods=['POST'])
+@token_required
+def analysis(current_user):
+    json_data = request.get_json()
+    now = datetime.datetime.now()
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    newTrackData=Incidents(
+    user_id=user_data['public_id'],
+    date = now.strftime("%d/%m/%Y %H:%M:%S"),
+    classification = json_data['classification'],
+    image_url = json_data['image_url'])
+
+    db.session.add(newTrackData)
+    db.session.commit()
+
+    return jsonify(message='Data Added'),201
+
