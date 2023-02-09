@@ -146,3 +146,41 @@ def analysis(current_user):
 
     return jsonify(message='Data Added'),201
 
+
+@app.route('/api/totaldistractions', methods=['GET'])
+@token_required
+def getCount(current_user):
+    user={}
+    user['public_id']=current_user.public_id
+
+    userDataAll=Incidents.query.filter_by(user_id=user['public_id']).all()
+    
+    count = len(userDataAll)
+
+    return jsonify(message=count), 201
+
+@app.route('/api/classifydistractions', methods = ['GET'])
+@token_required
+def mapDistractions(current_user):
+    user={}
+    user['public_id']=current_user.public_id
+
+    userDataAll=Incidents.query.filter_by(user_id=user['public_id']).all()
+    output=[]
+    user_data={}
+
+    if userDataAll:
+        for dist in userDataAll:
+            if dist.classification not in user_data:
+                user_data[dist.classification]= 1
+            else:
+                user_data[dist.classification]+= 1
+        output.append(user_data)
+        return jsonify(userData=output)
+    else:
+        return jsonify(message="No Distraction Data")
+    
+
+
+
+
