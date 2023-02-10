@@ -1,20 +1,11 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { MainProvider } from './context/MainContext';
+import MainCode from './MainCode';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Capstone Design Project</Text>
-      <StatusBar style="auto" />
-    </View>
+    <MainProvider>
+      <MainCode />
+    </MainProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
