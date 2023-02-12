@@ -153,9 +153,7 @@ def getCount(current_user):
     user={}
     user['public_id']=current_user.public_id
 
-    userDataAll=Incidents.query.filter_by(user_id=user['public_id']).all()
-    
-    count = len(userDataAll)
+    count =Incidents.query.filter_by(user_id=user['public_id']).count()
 
     return jsonify(message=count), 201
 
