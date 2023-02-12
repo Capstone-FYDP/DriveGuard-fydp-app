@@ -34,18 +34,6 @@ const DATA = [
     title: "Past Trips",
     data: ["Trip 1", "Trip 2", "Trip 3"],
   },
-  // {
-  //   title: "Sides",
-  //   data: ["French Fries", "Onion Rings", "Fried Shrimps"],
-  // },
-  // {
-  //   title: "Drinks",
-  //   data: ["Water", "Coke", "Beer"],
-  // },
-  // {
-  //   title: "Desserts",
-  //   data: ["Cheese Cake", "Ice Cream"],
-  // },
 ];
 
 const App = () => (
