@@ -16,7 +16,7 @@ const CustomTabBar = ({ state, navigation }) => {
   const containerClass = 'container' + theme;
 
   const handleSelectedTab = (currentTab) =>
-    currentTab === selected ? '#F65342' : '#9e9e9e';
+    currentTab === selected ? '#c80f2f' : '#9e9e9e';
 
   const handlePress = (currentTab, index) => {
     if (state.index !== index) {

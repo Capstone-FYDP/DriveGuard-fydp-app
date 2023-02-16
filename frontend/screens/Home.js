@@ -1,26 +1,15 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Text, View, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import CustomCard from '../components/card/CustomCard';
 import { MainContext } from '../context/MainContext';
 
-const stats = [
-  { distraction: 'Texting', count: '10', id: '0' },
-  { distraction: 'Talking on phone', count: '5', id: '1' },
-  { distraction: 'Operating Radio', count: '8', id: '2' },
-  { distraction: 'Drinking', count: '15', id: '3' },
-  { distraction: 'Reaching behind', count: '6', id: '4' },
-  { distraction: 'Hair and makeup', count: '8', id: '5' },
-  { distraction: 'Talking to passenger', count: '8', id: '6' },
-];
-
-const colourList = [
-  '#fc6d6b',
-  '#7956f8',
-  '#fd9167',
-  '#38c2fb',
-  '#5a65f8',
-  '#A7C957',
-];
+const api_url = 'https://reactnative.dev/movies.json';
 
 const DashboardCard = ({ item }) => {
   return (
@@ -30,10 +19,8 @@ const DashboardCard = ({ item }) => {
     >
       <View style={styles.cardContainer}>
         <View style={styles.textContainer}>
-          <Text style={[styles.title]}>{item.distraction}</Text>
-          <Text style={[styles.number, { color: colourList[item.id % 6] }]}>
-            {item.count}
-          </Text>
+          <Text style={[styles.title]}>{item.title}</Text>
+          <Text style={[styles.number]}>{item.releaseYear}</Text>
         </View>
       </View>
     </CustomCard>
@@ -42,33 +29,61 @@ const DashboardCard = ({ item }) => {
 
 const Home = () => {
   const total = { distraction: 'Total Distractions', count: '30' };
+  const [isLoading, setLoading] = useState(true);
+  const [data, setData] = useState([]);
+
+  const getMovies = async () => {
+    try {
+      const response = await fetch(api_url);
+      const json = await response.json();
+      setData(json.movies);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getMovies();
+  }, []);
+
   return (
-    <FlatList
-      ListHeaderComponent={
-        <CustomCard
-          outerStyle={[styles.infoCardOuter, styles.firstCard]}
-          innerStyle={styles.infoCardInner}
-        >
-          <View style={styles.firstCardTextContainer}>
-            <Text style={[styles.title, styles.firstCardTitle]}>
-              {total.distraction}
-            </Text>
-            <Text style={[styles.number, styles.firstCardNumber]}>
-              {total.count}
-            </Text>
-          </View>
-        </CustomCard>
-      }
-      numColumns={2}
-      columnWrapperStyle={styles.flatListContainer}
-      data={stats}
-      renderItem={DashboardCard}
-      keyExtractor={(item) => item.id}
-    />
+    <View style={styles.homeContainer}>
+      {isLoading ? (
+        <ActivityIndicator />
+      ) : (
+        <FlatList
+          ListHeaderComponent={
+            <CustomCard
+              outerStyle={[styles.infoCardOuter, styles.firstCard]}
+              innerStyle={styles.infoCardInner}
+            >
+              <View style={styles.firstCardTextContainer}>
+                <Text style={[styles.title, styles.firstCardTitle]}>
+                  {total.distraction}
+                </Text>
+                <Text style={[styles.number, styles.firstCardNumber]}>
+                  {total.count}
+                </Text>
+              </View>
+            </CustomCard>
+          }
+          numColumns={2}
+          columnWrapperStyle={styles.flatListContainer}
+          data={data}
+          keyExtractor={({ id }) => id}
+          renderItem={DashboardCard}
+        />
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  homeContainer: {
+    backgroundColor: '#f9f5ee',
+  },
   flatListContainer: {
     width: '85%',
     justifyContent: 'space-around',
@@ -84,7 +99,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'flex-start',
   },
   infoCardOuter: {
     width: '85%',
@@ -108,22 +122,25 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     justifyContent: 'space-evenly',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   number: {
     fontSize: 32,
     fontWeight: '600',
+    color: '#c80f2f',
   },
   title: {
     fontSize: 14,
-    fontWeight: '300',
-    color: '#7E7E7E',
+    fontWeight: '400',
+    color: '#3f2021',
   },
   firstCardNumber: {
     fontSize: 40,
+    color: '#c80f2f',
   },
   firstCardTitle: {
     fontSize: 16,
+    color: '#3f2021',
   },
 });
 
