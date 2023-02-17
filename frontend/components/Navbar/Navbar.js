@@ -12,6 +12,7 @@ const Navbar = () => {
   return (
     <Tab.Navigator tabBar={(props) => <CustomTabBar {...props} />}>
       <Tab.Screen
+        options={{ headerShown: false }}
         name="Home"
         component={Home}
         initialParams={{ icon: 'home' }}

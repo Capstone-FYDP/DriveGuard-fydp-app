@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import CustomCard from '../components/card/CustomCard';
 import { MainContext } from '../context/MainContext';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const api_url = 'https://reactnative.dev/movies.json';
 
@@ -50,6 +51,16 @@ const Home = () => {
 
   return (
     <View style={styles.homeContainer}>
+      <View style={styles.upperContainer}>
+        <View style={styles.textWrapper}>
+          <MaterialCommunityIcons
+            name={'finance'}
+            size={30}
+            color={'#3f2021'}
+          />
+          <Text style={styles.headerTitle}>My Driving Stats</Text>
+        </View>
+      </View>
       {isLoading ? (
         <ActivityIndicator />
       ) : (
@@ -84,6 +95,26 @@ const styles = StyleSheet.create({
   homeContainer: {
     backgroundColor: '#f9f5ee',
   },
+  upperContainer: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  textWrapper: {
+    width: '85%',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  headerTitle: {
+    fontSize: 30,
+    marginLeft: 20,
+    fontWeight: '600',
+    color: '#3f2021',
+  },
   flatListContainer: {
     width: '85%',
     justifyContent: 'space-around',
@@ -115,6 +146,7 @@ const styles = StyleSheet.create({
   },
   firstCard: {
     marginTop: 20,
+    backgroundColor: '#c80f2f',
   },
   firstCardTextContainer: {
     justifyContent: 'space-evenly',
@@ -136,11 +168,11 @@ const styles = StyleSheet.create({
   },
   firstCardNumber: {
     fontSize: 40,
-    color: '#c80f2f',
+    color: '#fff',
   },
   firstCardTitle: {
-    fontSize: 16,
-    color: '#3f2021',
+    fontSize: 18,
+    color: '#fff',
   },
 });
 
