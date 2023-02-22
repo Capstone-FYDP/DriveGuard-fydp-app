@@ -1,6 +1,6 @@
 from flask import Flask,render_template, request, jsonify, make_response, url_for,redirect
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager,jwt_required,create_access_token
 from flask_mail import Mail, Message
 from sqlalchemy import Column, Integer,String, Float, Boolean
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
@@ -18,6 +18,8 @@ import re
 import datetime
 
 app = Flask(__name__)
+CORS(app)
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///' + os.path.join(basedir,'users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -146,7 +148,6 @@ def analysis(current_user):
 
     return jsonify(message='Data Added'),201
 
-
 @app.route('/api/totaldistractions', methods=['GET'])
 @token_required
 def getCount(current_user):
@@ -177,8 +178,6 @@ def mapDistractions(current_user):
         return jsonify(userData=output)
     else:
         return jsonify(message="No Distraction Data")
-    
 
-
-
-
+if __name__ == '__main__':
+    app.run(debug=True)
