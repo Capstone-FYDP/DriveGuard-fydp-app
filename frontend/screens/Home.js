@@ -9,8 +9,8 @@ import {
 import CustomCard from '../components/card/CustomCard';
 import { MainContext } from '../context/MainContext';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
-const api_url = 'https://reactnative.dev/movies.json';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const DashboardCard = ({ item }) => {
   return (
@@ -29,15 +29,65 @@ const DashboardCard = ({ item }) => {
 };
 
 const Home = () => {
-  const total = { distraction: 'Total Distractions', count: '30' };
-  const [isLoading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
+  const context = useContext(MainContext);
+  const [total, setTotal] = useState();
+  const [isLoading, setLoading] = useState(false);
+  const [classData, setClassData] = useState([]);
 
-  const getMovies = async () => {
+  const getToken = async () => {
     try {
-      const response = await fetch(api_url);
+      return await AsyncStorage.getItem('auth_token');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const getTotalDistractions = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        context.fetchPath + `api/totaldistractions`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
       const json = await response.json();
-      setData(json.movies);
+      setTotal(json.message);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getClassificationData = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        context.fetchPath + `api/classifydistractions`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        setClassData(json.message);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -46,7 +96,8 @@ const Home = () => {
   };
 
   useEffect(() => {
-    getMovies();
+    getTotalDistractions();
+    getClassificationData();
   }, []);
 
   return (
@@ -72,17 +123,17 @@ const Home = () => {
             >
               <View style={styles.firstCardTextContainer}>
                 <Text style={[styles.title, styles.firstCardTitle]}>
-                  {total.distraction}
+                  Total Distractions
                 </Text>
                 <Text style={[styles.number, styles.firstCardNumber]}>
-                  {total.count}
+                  {total}
                 </Text>
               </View>
             </CustomCard>
           }
           numColumns={2}
           columnWrapperStyle={styles.flatListContainer}
-          data={data}
+          data={classData}
           keyExtractor={({ id }) => id}
           renderItem={DashboardCard}
         />

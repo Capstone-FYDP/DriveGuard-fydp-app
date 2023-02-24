@@ -10,7 +10,7 @@ import LoadingIndicator from '../../components/loadingIndicator/loadingIndicator
 import Toast from 'react-native-toast-message';
 import { validate } from 'validate.js';
 import signinValidation from '../../validation/signin-validation';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Signin = ({ navigation }) => {
   const context = useContext(MainContext);
@@ -21,7 +21,7 @@ const Signin = ({ navigation }) => {
   const errorCheckOrder = ['email', 'password'];
 
   const setToken = (token) => {
-    return SecureStore.setItemAsync('auth_token', token);
+    return AsyncStorage.setItem('auth_token', token);
   };
 
   const handleSubmit = async () => {
@@ -47,8 +47,8 @@ const Signin = ({ navigation }) => {
     } else {
       let response;
       let json;
-      console.log("Email: ", email)
-      console.log("Password: ", password)
+      console.log('Email: ', email);
+      console.log('Password: ', password);
       try {
         response = await fetch(context.fetchPath + 'api/login', {
           method: 'POST',
@@ -60,7 +60,7 @@ const Signin = ({ navigation }) => {
 
         json = await response.json();
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
 
       if (json.token) {
