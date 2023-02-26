@@ -1,38 +1,32 @@
 import React, { useState, useEffect, useContext } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
-import CustomCard from '../components/card/CustomCard';
+import { StyleSheet, Text, View, FlatList } from 'react-native';
+import CustomCard from '../components/card/custom-card';
 import { MainContext } from '../context/MainContext';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-
-const DashboardCard = ({ item }) => {
-  return (
-    <CustomCard
-      outerStyle={[styles.listCard]}
-      innerStyle={styles.infoCardInner}
-    >
-      <View style={styles.cardContainer}>
-        <View style={styles.textContainer}>
-          <Text style={[styles.title]}>{item.title}</Text>
-          <Text style={[styles.number]}>{item.releaseYear}</Text>
-        </View>
-      </View>
-    </CustomCard>
-  );
-};
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 
 const Home = () => {
   const context = useContext(MainContext);
   const [total, setTotal] = useState();
-  const [isLoading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(true);
   const [classData, setClassData] = useState([]);
+
+  const DashboardCard = ({ item }) => {
+    return (
+      <CustomCard
+        outerStyle={[styles.listCard]}
+        innerStyle={styles.infoCardInner}
+      >
+        <View style={styles.cardContainer}>
+          <View style={styles.textContainer}>
+            <Text style={[styles.title]}>{item}</Text>
+            <Text style={[styles.number]}>{classData[item]}</Text>
+          </View>
+        </View>
+      </CustomCard>
+    );
+  };
 
   const getToken = async () => {
     try {
@@ -59,8 +53,6 @@ const Home = () => {
       setTotal(json.message);
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -86,7 +78,8 @@ const Home = () => {
           type: 'error',
         });
       } else {
-        setClassData(json.message);
+        console.log(json.userData[0]);
+        setClassData(json.userData[0]);
       }
     } catch (error) {
       console.error(error);
@@ -104,16 +97,11 @@ const Home = () => {
     <View style={styles.homeContainer}>
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
-          <MaterialCommunityIcons
-            name={'finance'}
-            size={30}
-            color={'#3f2021'}
-          />
-          <Text style={styles.headerTitle}>My Driving Stats</Text>
+          <Text style={styles.headerTitle}>My Driving Score</Text>
         </View>
       </View>
       {isLoading ? (
-        <ActivityIndicator />
+        <LoadingIndicator isAnimating={true} />
       ) : (
         <FlatList
           ListHeaderComponent={
@@ -133,8 +121,7 @@ const Home = () => {
           }
           numColumns={2}
           columnWrapperStyle={styles.flatListContainer}
-          data={classData}
-          keyExtractor={({ id }) => id}
+          data={Object.keys(classData)}
           renderItem={DashboardCard}
         />
       )}
@@ -144,14 +131,16 @@ const Home = () => {
 
 const styles = StyleSheet.create({
   homeContainer: {
-    backgroundColor: '#f9f5ee',
+    flex: 1,
+    backgroundColor: '#fffbf6',
   },
   upperContainer: {
     width: '100%',
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingVertical: 30,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   textWrapper: {
     width: '85%',
@@ -162,7 +151,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 30,
-    marginLeft: 20,
     fontWeight: '600',
     color: '#3f2021',
   },
@@ -177,7 +165,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     paddingVertical: 5,
     paddingHorizontal: 25,
-    borderRadius: 15,
+    borderRadius: 20,
     alignSelf: 'center',
     display: 'flex',
     justifyContent: 'center',
@@ -186,7 +174,7 @@ const styles = StyleSheet.create({
     width: '85%',
     marginVertical: 10,
     padding: 15,
-    borderRadius: 15,
+    borderRadius: 20,
     alignSelf: 'center',
   },
   infoCardInner: {
@@ -197,7 +185,7 @@ const styles = StyleSheet.create({
   },
   firstCard: {
     marginTop: 20,
-    backgroundColor: '#c80f2f',
+    backgroundColor: '#f5ad47',
   },
   firstCardTextContainer: {
     justifyContent: 'space-evenly',
@@ -210,19 +198,21 @@ const styles = StyleSheet.create({
   number: {
     fontSize: 32,
     fontWeight: '600',
-    color: '#c80f2f',
+    color: '#f5ad47',
   },
   title: {
     fontSize: 14,
     fontWeight: '400',
+    textAlign: 'center',
     color: '#3f2021',
+    textTransform: 'capitalize',
   },
   firstCardNumber: {
     fontSize: 40,
     color: '#fff',
   },
   firstCardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#fff',
   },
 });

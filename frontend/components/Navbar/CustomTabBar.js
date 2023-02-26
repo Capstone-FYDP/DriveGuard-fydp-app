@@ -16,7 +16,7 @@ const CustomTabBar = ({ state, navigation }) => {
   const containerClass = 'container' + theme;
 
   const handleSelectedTab = (currentTab) =>
-    currentTab === selected ? '#c80f2f' : '#9e9e9e';
+    currentTab === selected ? '#f5ad47' : '#bdbdbd';
 
   const handlePress = (currentTab, index) => {
     if (state.index !== index) {
@@ -47,9 +47,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    height: 60,
-    elevation: 2,
-    borderColor: '#9e9e9e',
+    height: 70,
+    elevation: 10,
     borderTopWidth: 0,
   },
   containerDark: {
