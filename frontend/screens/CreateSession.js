@@ -31,7 +31,7 @@ import {
 
 const DATA = [
   {
-    title: "Past Trips",
+    title: "Start Session",
     data: ["Trip 1", "Trip 2", "Trip 3"],
   },
 ];
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: StatusBar.currentHeight,
-    marginHorizontal: 16,
+    marginHorizontal: 60,
   },
   item: {
     backgroundColor: "#fff",
