@@ -10,76 +10,74 @@ import LoadingIndicator from "../../components/loadingIndicator/loadingIndicator
 import Toast from "react-native-toast-message";
 import { validate } from "validate.js";
 import signupValidation from "../../validation/signup-validation";
+import { ScrollView } from "react-native-gesture-handler";
 
 const Signup = ({ navigation }) => {
   const context = useContext(MainContext);
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const errorCheckOrder = ["email", "password", "confirmPassword"];
+  const errorCheckOrder = ["firstName", "lastName", "email", "password", "confirmPassword"];
 
-  // const handleSubmit = async () => {
-  //   setLoading(true);
+  const handleSubmit = async () => {
+    setLoading(true);
 
-  //   // This validate function performs the error checking using the
-  //   // signupValidation object and returns all the errors. If
-  //   // there are no errors, then validationResult will be null
-  //   const validationResult = validate(
-  //     { email, password, confirmPassword },
-  //     signupValidation
-  //   );
+    // This validate function performs the error checking using the
+    // signupValidation object and returns all the errors. If
+    // there are no errors, then validationResult will be null
+    const validationResult = validate(
+      { firstName, lastName, email, password, confirmPassword },
+      signupValidation
+    );
 
-  //   if (validationResult) {
-  //     for (let error of errorCheckOrder) {
-  //       if (validationResult[error]) {
-  //         Toast.show({
-  //           text1: "Error",
-  //           text2: validationResult[error][0],
-  //           type: "error",
-  //         });
-  //         break;
-  //       }
-  //     }
-  //     setLoading(false);
-  //   } else {
-  //     let response;
-  //     let json;
+    if (validationResult) {
+      for (let error of errorCheckOrder) {
+        if (validationResult[error]) {
+          Toast.show({
+            text1: "Error",
+            text2: validationResult[error][0],
+            type: "error",
+          });
+          break;
+        }
+      }
+      setLoading(false);
+    } else {
+      let response;
+      let json;
 
-  //     response = await fetch(context.fetchPath + "api/signup", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ email, password }),
-  //     });
+      response = await fetch(context.fetchPath + "api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ firstName, lastName, email, password, confirmPassword }),
+      });
 
-  //     json = await response.json();
+      json = await response.json();
+      console.log("test2")
 
-  //     if (json.message === "Successfully created user") {
-  //       Toast.show({
-  //         text1: "Registered!",
-  //         text2: "A verification link has been sent to your email inbox.",
-  //         type: "success",
-  //         visibilityTime: 10000,
-  //       });
-  //       //NAVIGATE BACK TO LOGIN PAGE HERE
-  //       navigation.navigate("Signin");
-  //     } else {
-  //       Toast.show({
-  //         text1: "Error",
-  //         text2: json.message,
-  //         type: "error",
-  //       });
-  //     }
-  //     setLoading(false);
-  //   }
-  // };
-
-  const testSubmit = async () => {
-    console.log("test submit signup")
-  }
+      if (json.message == "User Created") {
+        Toast.show({
+          text1: "Registered 🎉",
+          text2: "Your account has been created! Log in with your new credentials!",
+          type: "success",
+        });
+        navigation.navigate("Signin");
+      } else {
+        Toast.show({
+          text1: "Error",
+          text2: json.message,
+          type: "error",
+        });
+      }
+      setLoading(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -102,35 +100,53 @@ const Signup = ({ navigation }) => {
           <CustomHeader additionalStyles={styles.createAccountHeader}>
             Create Account
           </CustomHeader>
-          <View style={styles.inputContainer}>
-            <CustomInputBox
-              field="Email"
-              placeholder="Enter your email address"
-              value={email}
-              onChange={setEmail}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <CustomInputBox
-              field="Password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={setPassword}
-              secureTextEntry={true}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <CustomInputBox
-              field="Confirm Password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-              secureTextEntry={true}
-            />
-          </View>
+          <ScrollView style={styles.scrollInputContainer}>
+            <View style={styles.inputContainer}>
+              <CustomInputBox
+                field="First Name"
+                placeholder="Enter your first name"
+                value={firstName}
+                onChange={setFirstName}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <CustomInputBox
+                field="Last Name"
+                placeholder="Enter your last name"
+                value={lastName}
+                onChange={setLastName}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <CustomInputBox
+                field="Email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={setEmail}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <CustomInputBox
+                field="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={setPassword}
+                secureTextEntry={true}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <CustomInputBox
+                field="Confirm Password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                secureTextEntry={true}
+              />
+            </View>
+          </ScrollView>
           <View style={styles.inputContainer}>
             <CustomButton
-              onPress={testSubmit}
+              onPress={handleSubmit}
               type="emphasized"
               text={
                 loading ? (
@@ -164,6 +180,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 40,
   },
+  scrollInputContainer: {
+    flex: 1,
+    marginBottom: 25,
+  },
   lowerOuterContainer: {
     width: "100%",
     height: "100%",
@@ -182,11 +202,12 @@ const styles = StyleSheet.create({
   allInputContainer: {
     width: "100%",
     display: "flex",
-    minHeight: 400,
+    height: 600
   },
   inputContainer: {
     flex: 1,
     width: "100%",
+    marginBottom: 25,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { MainContext } from '../../context/MainContext';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import Toast from 'react-native-toast-message';
 import { validate } from 'validate.js';
 import signinValidation from '../../validation/signin-validation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const Signin = ({ navigation }) => {
   const context = useContext(MainContext);
@@ -20,9 +21,30 @@ const Signin = ({ navigation }) => {
 
   const errorCheckOrder = ['email', 'password'];
 
+  const getToken = () => {
+    return AsyncStorage.getItem('auth_token');
+  };
+
   const setToken = (token) => {
     return AsyncStorage.setItem('auth_token', token);
   };
+
+  useEffect(() => {
+    getToken().then(async (token) => {
+      const response = await fetch(context.fetchPath + 'api/validateToken', {
+        method: 'GET',
+        headers: {
+          'x-access-tokens': token,
+        },
+      });
+
+      const json = await response.json();
+
+      if (json.valid === true) {
+        navigation.navigate('Navbar');
+      }
+    });
+  }, []);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -101,35 +123,36 @@ const Signin = ({ navigation }) => {
         innerStyle={styles.lowerInnerContainer}
         noTouchOpacity
       >
-        <CustomHeader style={styles.header}>Welcome Back</CustomHeader>
-        <View style={styles.inputContainer}>
-          <CustomInputBox
-            field="Email"
-            placeholder="Enter your email address"
-            value={email}
-            onChange={setEmail}
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <CustomInputBox
-            field="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={setPassword}
-            secureTextEntry={true}
-          />
-        </View>
+        <CustomHeader additionalStyles={styles.header}>Welcome Back</CustomHeader>
+        <ScrollView style={styles.scrollInputContainer}>
+          <View style={styles.inputContainer}>
+            <CustomInputBox
+              field="Email"
+              placeholder="Enter your email address"
+              value={email}
+              onChange={setEmail}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <CustomInputBox
+              field="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={setPassword}
+              secureTextEntry={true}
+            />
+          </View>
+        </ScrollView>
 
-        <CustomButton
+        {/* <CustomButton
           type="clear"
           text="Forgot Password?"
           textColor="#ff8d4f"
           //NAVIGATE TO FORGOT PASSWORD
           // onPress={() => navigation.navigate("forgotPassword")}
-        />
+        /> */}
 
         <View style={styles.inputContainer}>
-          <View style={styles.inputContainer}>
             <CustomButton
               onPress={handleSubmit}
               type="emphasized"
@@ -141,7 +164,6 @@ const Signin = ({ navigation }) => {
                 )
               }
             />
-          </View>
         </View>
 
         <View style={styles.createAccountContainer}>
@@ -177,7 +199,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   signinHeader: { color: '#ffffff' },
-  createAccountHeader: { marginBottom: 30 },
+  header: { marginBottom: 30 },
   upperContainer: {
     width: '100%',
     display: 'flex',
@@ -185,6 +207,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flex: 1,
     padding: 40,
+  },
+  scrollInputContainer: {
+    flex: 1,
+    width: '100%',
+    marginBottom: 25,
   },
   lowerOuterContainer: {
     width: '100%',
@@ -203,7 +230,9 @@ const styles = StyleSheet.create({
     minHeight: 400,
   },
   inputContainer: {
+    flex: 1,
     width: '100%',
+    marginBottom: 25,
   },
   createAccountContainer: {
     display: 'flex',

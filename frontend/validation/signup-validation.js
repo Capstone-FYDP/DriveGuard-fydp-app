@@ -1,4 +1,24 @@
 export const signupValidation = {
+  firstName: {
+    presence: {
+      allowEmpty: false,
+      message: '^Please enter a first name',
+    },
+    format: {
+      pattern: "[a-zA-Z]+",
+      message: "^Your first name must only contain letters",
+    },
+  },
+  lastName: {
+    presence: {
+      allowEmpty: false,
+      message: '^Please enter an email address',
+    },
+    format: {
+      pattern: "[a-zA-Z]+",
+      message: "^Your last name must only contain letters",
+    },
+  },
   email: {
     presence: {
       allowEmpty: false,
