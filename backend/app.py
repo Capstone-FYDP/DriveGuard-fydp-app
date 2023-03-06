@@ -83,6 +83,17 @@ class Incidents(db.Model):
     classification = Column(String(50))
     image_url = Column(String)
     
+@app.route("/api/validateToken", methods=['GET'])
+def validateToken():
+    if not request.headers.get('x-access-tokens'):
+        return {'message': 'No token provided'},400
+    try:
+        data=jwt.decode(request.headers.get('x-access-tokens'), app.config['SECRET_KEY'])
+        current_user=User.query.filter_by(public_id=data['public_id']).first()
+        return {'valid': True}
+    except:
+        return {'valid': False}
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data=request.json
