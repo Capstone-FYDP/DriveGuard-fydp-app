@@ -12,7 +12,7 @@ const App = () => {
     <SafeAreaView style={styles.createContainer}>
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
-          <Text style={styles.headerTitle}>Start Sessions</Text>
+          <Text style={styles.headerTitle}>Start Session</Text>
         </View>
       </View>
 
