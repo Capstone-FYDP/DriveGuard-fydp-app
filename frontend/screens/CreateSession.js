@@ -1,9 +1,7 @@
 import React from "react";
-// import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, SafeAreaView, Button } from "react-native";
 import CustomButton from "../components/button/custom-button";
 import CustomCard from "../components/card/custom-card";
-import StopWatch from "../components/stopwatch/stopwatch";
 
 const App = () => (
   <SafeAreaView style={styles.createContainer}>
@@ -23,12 +21,7 @@ const App = () => (
       noTouchOpacity
     >
       <View style={styles.buttonsContainer}>
-        {/* <StopWatch style={styles.stopwatchContainer}></StopWatch> */}
-        <CustomButton
-          type="emphasized"
-          text={"Start"}
-          // backgroundColor={(backgroundColor = "#EF5350")}
-        />
+        <CustomButton type="emphasized" text={"Start"} />
         <CustomButton type="emphasized" text={"Stop"} />
       </View>
     </CustomCard>
@@ -36,10 +29,6 @@ const App = () => (
 );
 
 const styles = StyleSheet.create({
-  // stopwatchContainer: {
-  //   paddingTop: 50,
-  //   flex: 1,
-  // },
   createContainer: {
     flex: 1,
     backgroundColor: "#fffbf6",
@@ -94,15 +83,15 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    // margin: 0,
+    margin: 0,
     paddingVertical: 40,
     paddingHorizontal: 20,
     elevation: 2,
   },
   lowerInnerContainer: {
-    // justifyContent: "space-between",
-    // alignItems: "flex-start",
-    // minHeight: 400,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    minHeight: 400,
   },
   startButton: {
     backgroundColor: "blue",
@@ -110,11 +99,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-// });
