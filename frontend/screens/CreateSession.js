@@ -1,32 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Text, View, SafeAreaView, Button } from "react-native";
 import CustomButton from "../components/button/custom-button";
 import CustomCard from "../components/card/custom-card";
 
-const App = () => (
-  <SafeAreaView style={styles.createContainer}>
-    <View style={styles.upperContainer}>
-      <View style={styles.textWrapper}>
-        <Text style={styles.headerTitle}>Start Session</Text>
-      </View>
-    </View>
+const App = () => {
+  const [text, setText] = useState("Message Prompt");
+  const onPressStart = (event) => setText("Session Started");
+  const onPressStop = (event) => setText("Session Stopped");
 
-    <View style={styles.item}>
-      <Text style={styles.title}>Message Prompt</Text>
-    </View>
-
-    <CustomCard
-      outerStyle={styles.lowerOuterContainer}
-      innerStyle={styles.lowerInnerContainer}
-      noTouchOpacity
-    >
-      <View style={styles.buttonsContainer}>
-        <CustomButton type="emphasized" text={"Start"} />
-        <CustomButton type="emphasized" text={"Stop"} />
+  return (
+    <SafeAreaView style={styles.createContainer}>
+      <View style={styles.upperContainer}>
+        <View style={styles.textWrapper}>
+          <Text style={styles.headerTitle}>Start Session</Text>
+        </View>
       </View>
-    </CustomCard>
-  </SafeAreaView>
-);
+
+      <View style={styles.item}>
+        <Text style={styles.title}>{text}</Text>
+      </View>
+
+      <CustomCard
+        outerStyle={styles.lowerOuterContainer}
+        innerStyle={styles.lowerInnerContainer}
+        noTouchOpacity
+      >
+        <View style={styles.buttonsContainer}>
+          <CustomButton
+            type="emphasized"
+            text={"Start"}
+            onPress={onPressStart}
+          />
+          <CustomButton type="emphasized" text={"Stop"} onPress={onPressStop} />
+        </View>
+      </CustomCard>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
   createContainer: {
