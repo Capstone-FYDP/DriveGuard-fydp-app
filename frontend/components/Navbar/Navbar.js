@@ -13,22 +13,25 @@ const Navbar = () => {
     <Tab.Navigator tabBar={(props) => <CustomTabBar {...props} />}>
       <Tab.Screen
         options={{ headerShown: false }}
-        name="Home"
+        name='Home'
         component={Home}
         initialParams={{ icon: 'home' }}
       />
       <Tab.Screen
-        name="Trips"
+        options={{ headerShown: false }}
+        name='Trips'
         component={MySessions}
         initialParams={{ icon: 'format-list-bulleted' }}
       />
       <Tab.Screen
-        name="Create"
+        options={{ headerShown: false }}
+        name='Create'
         component={CreateSession}
         initialParams={{ icon: 'plus-box' }}
       />
       <Tab.Screen
-        name="Profile"
+        options={{ headerShown: false }}
+        name='Profile'
         component={Profile}
         initialParams={{ icon: 'account' }}
       />
