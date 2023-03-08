@@ -33,8 +33,7 @@ const styles = StyleSheet.create({
   },
   cardContainerLight: {
     backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    elevation: 0.25,
+    elevation: 1,
   },
   cardContent: {
     display: 'flex',

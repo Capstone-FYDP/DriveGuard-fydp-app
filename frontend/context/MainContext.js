@@ -5,8 +5,10 @@ export const MainContext = createContext();
 
 export const MainProvider = ({ children }) => {
   const [theme, setTheme] = useState('light');
-  const [gradient, setGradient] = useState(['#f62e4a', '#ff8d4f']);
+  const gradient = ['#7751cd', '#9d4ac6'];
   const fetchPath = 'http://10.0.2.2:5000/';
+  const primaryColour = '#9d4ac6';
+  const screenBackground = '#FAFAFA';
 
   return (
     <MainContext.Provider
@@ -15,6 +17,8 @@ export const MainProvider = ({ children }) => {
         setTheme,
         gradient,
         fetchPath,
+        primaryColour,
+        screenBackground,
       }}
     >
       {children}

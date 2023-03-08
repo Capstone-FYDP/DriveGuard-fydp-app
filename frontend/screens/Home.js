@@ -5,6 +5,7 @@ import { MainContext } from '../context/MainContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Home = () => {
   const context = useContext(MainContext);
@@ -21,7 +22,9 @@ const Home = () => {
         <View style={styles.cardContainer}>
           <View style={styles.textContainer}>
             <Text style={[styles.title]}>{item}</Text>
-            <Text style={[styles.number]}>{classData[item]}</Text>
+            <Text style={[styles.number, { color: context.primaryColour }]}>
+              {classData[item]}
+            </Text>
           </View>
         </View>
       </CustomCard>
@@ -94,7 +97,12 @@ const Home = () => {
   }, []);
 
   return (
-    <View style={styles.homeContainer}>
+    <View
+      style={[
+        styles.homeContainer,
+        { backgroundColor: context.screenBackground },
+      ]}
+    >
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
           <Text style={styles.headerTitle}>My Driving Score</Text>
@@ -109,14 +117,21 @@ const Home = () => {
               outerStyle={[styles.infoCardOuter, styles.firstCard]}
               innerStyle={styles.infoCardInner}
             >
-              <View style={styles.firstCardTextContainer}>
-                <Text style={[styles.title, styles.firstCardTitle]}>
-                  Total Distractions
-                </Text>
-                <Text style={[styles.number, styles.firstCardNumber]}>
-                  {total}
-                </Text>
-              </View>
+              <LinearGradient
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                colors={context.gradient}
+                style={[styles.linearGradient]}
+              >
+                <View style={styles.firstCardTextContainer}>
+                  <Text style={[styles.title, styles.firstCardTitle]}>
+                    Total Distractions
+                  </Text>
+                  <Text style={[styles.number, styles.firstCardNumber]}>
+                    {total}
+                  </Text>
+                </View>
+              </LinearGradient>
             </CustomCard>
           }
           numColumns={2}
@@ -132,7 +147,7 @@ const Home = () => {
 const styles = StyleSheet.create({
   homeContainer: {
     flex: 1,
-    backgroundColor: '#fffbf6',
+    backgroundColor: '#fff',
   },
   upperContainer: {
     width: '100%',
@@ -159,11 +174,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignSelf: 'center',
   },
+  linearGradient: {
+    borderRadius: 20,
+    width: '100%',
+    padding: 20,
+  },
   listCard: {
     flex: 0.5,
-    marginVertical: 5,
+    marginVertical: 7,
     marginHorizontal: 5,
-    paddingVertical: 5,
+    paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 20,
     alignSelf: 'center',
@@ -173,7 +193,6 @@ const styles = StyleSheet.create({
   infoCardOuter: {
     width: '85%',
     marginVertical: 10,
-    padding: 15,
     borderRadius: 20,
     alignSelf: 'center',
   },
@@ -181,7 +200,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    height: 80,
   },
   firstCard: {
     marginTop: 20,
@@ -204,7 +222,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     textAlign: 'center',
-    color: '#3f2021',
     textTransform: 'capitalize',
   },
   firstCardNumber: {
