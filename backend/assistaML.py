@@ -46,7 +46,7 @@ def predict(model, image, device):
             print("Predicted class: {}, Confidence: {:.2f}%".format(class_idx, class_confidence.item()*100))
 
 def getClassficiations():
-    print({'c0': 'safe driving', 'c1': 'texting - right', 'c2': 'talking on the phone - right', 'c3': 'texting - left', 'c4': 'talking on the phone - left', 'c5': 'operating the radio', 'c6': 'drinking', 'c7': 'reaching behind', 'c8': 'hair and makeup', 'c9': 'talking to passenger'})
+   return {'c0': 'safe driving', 'c1': 'texting - right', 'c2': 'talking on the phone - right', 'c3': 'texting - left', 'c4': 'talking on the phone - left', 'c5': 'operating the radio', 'c6': 'drinking', 'c7': 'reaching behind', 'c8': 'hair and makeup', 'c9': 'talking to passenger'}
 
 model, device = loadModel()
 
