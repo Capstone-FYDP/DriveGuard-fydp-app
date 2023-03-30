@@ -4,7 +4,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from sqlalchemy import Column, Integer,String, Float, Boolean
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from PIL import Image
+from io import BytesIO
+import base64
 
+
+
+from assistaML import predict, loadModel, getClassficiations
 
 import pickle
 import numpy as np
@@ -138,7 +144,7 @@ def login():
         return jsonify(token=token.decode('UTF-8'))
     else:
         return jsonify(message='Your email or password is incorrect'),401
-
+#Todo: Deprecate this endpoint once we implement the model, this is purley for testing
 @app.route('/api/distraction', methods=['POST'])
 @token_required
 def analysis(current_user):
@@ -189,6 +195,20 @@ def mapDistractions(current_user):
         return jsonify(userData=output)
     else:
         return jsonify(message="No Distraction Data")
+    
+@app.route('/api/predict', methods = ['POST'])
+@token_required
+def predictImage(current_user):
+    data = request.json
+    image = Image.open(BytesIO(base64.b64decode(data['image'])))
+    model, device = loadModel()
+    out = predict(model, image, device)
+    res = out.split()
+
+    return jsonify({
+                    "classficiation": getClassficiations(res[0]),
+                    "confidence": round(float(res[1]), 2)
+                    })
 
 if __name__ == '__main__':
     app.run(debug=True)

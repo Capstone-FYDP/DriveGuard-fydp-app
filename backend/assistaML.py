@@ -43,14 +43,21 @@ def predict(model, image, device):
         for i in range(preds.size(1)):
             class_idx = preds[0][i]
             class_confidence = torch.exp(output[0][class_idx]) / torch.sum(torch.exp(output[0]))
-            print("Predicted class: {}, Confidence: {:.2f}%".format(class_idx, class_confidence.item()*100))
+            return ("{} {}".format(class_idx, class_confidence.item()*100))
 
-def getClassficiations():
-   return {'c0': 'safe driving', 'c1': 'texting - right', 'c2': 'talking on the phone - right', 'c3': 'texting - left', 'c4': 'talking on the phone - left', 'c5': 'operating the radio', 'c6': 'drinking', 'c7': 'reaching behind', 'c8': 'hair and makeup', 'c9': 'talking to passenger'}
+def getClassficiations(class_idx):
+   mapping = {
+       '0': 'safe driving', 
+       '1': 'texting - right', 
+       '2': 'talking on the phone - right', 
+       '3': 'texting - left', 
+       '4': 'talking on the phone - left', 
+       '5': 'operating the radio', 
+       '6': 'drinking', 
+       '7': 'reaching behind', 
+       '8': 'hair and makeup', 
+       '9': 'talking to passenger' 
+   }
 
-model, device = loadModel()
-
-image = Image.open('./images/img_100029.jpg')
-
-predict(model, image, device)
+   return mapping[class_idx]
 
