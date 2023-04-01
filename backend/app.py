@@ -2,7 +2,7 @@ from flask import Flask,render_template, request, jsonify, make_response, url_fo
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from sqlalchemy import Column, Integer,String, Float, Boolean
+from sqlalchemy import Column, Integer,String, Float, Boolean, Date
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from PIL import Image
 from io import BytesIO
@@ -88,6 +88,16 @@ class Incidents(db.Model):
     date = Column(String(50))
     classification = Column(String(50))
     image_url = Column(String)
+
+class Session(db.Model):
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String(50), unique=True)
+    user_id=Column(String(50), unique=False)
+    startDate = Column(String(50))
+    endDate = Column(String(50))
+    status = Column(String(50))
+    numOfIncidents = Column(Integer)
+
     
 @app.route("/api/validateToken", methods=['GET'])
 def validateToken():
@@ -209,6 +219,63 @@ def predictImage(current_user):
                     "classficiation": getClassficiations(res[0]),
                     "confidence": round(float(res[1]), 2)
                     })
+
+@app.route('/api/createSession', methods = ['POST'])
+@token_required
+def createSession(current_user):
+    now = datetime.datetime.now()
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    newSession=Session(
+    user_id=user_data['public_id'],
+    session_id = str(uuid.uuid4()),
+    startDate = now.strftime("%d/%m/%Y %H:%M:%S"),
+    endDate = "n/a",
+    status = "ACTIVE",
+    numOfIncidents=0)
+
+    db.session.add(newSession)
+    db.session.commit()
+
+    return jsonify(message='Session Created'),201
+
+@app.route('/api/endSession/<sessionId>', methods = ['PUT'])
+@token_required
+def endSession(current_user, sessionId):
+    endTime = datetime.datetime.now()
+    data = request.json
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    userSession = Session.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).first()
+
+    if userSession:
+        if userSession.status == "ACTIVE":
+            userSession.status = "COMPLETED"
+            userSession.endDate = endTime.strftime("%d/%m/%Y %H:%M:%S")
+            userSession.numOfIncidents = data['incidents']
+            db.session.commit()
+            return jsonify(message="This session has completed")
+
+        else:
+            return jsonify(message="This session has already been completed")
+    else:
+        return jsonify(message="This session does not exist")
+
+
+
+
+    # id = Column(Integer, primary_key=True)
+    # user_id=Column(String(50), unique=False)
+    # startDate = Column(String(50))
+    # endDate = Column(String(50))
+    # status = Column(String(50))
+    # numOfIncidents = Column(Integer)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
