@@ -265,17 +265,5 @@ def endSession(current_user, sessionId):
     else:
         return jsonify(message="This session does not exist")
 
-
-
-
-    # id = Column(Integer, primary_key=True)
-    # user_id=Column(String(50), unique=False)
-    # startDate = Column(String(50))
-    # endDate = Column(String(50))
-    # status = Column(String(50))
-    # numOfIncidents = Column(Integer)
-
-
-
 if __name__ == '__main__':
     app.run(debug=True)
