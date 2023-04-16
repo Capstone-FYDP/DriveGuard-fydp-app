@@ -291,7 +291,7 @@ def getSession(current_user):
     
 @app.route('/api/getSession/<sessionId>', methods = ['GET'])
 @token_required
-def getSession(current_user, sessionId):
+def viewSession(current_user, sessionId):
     user_data= {}
     user_data['public_id'] = current_user.public_id
 
