@@ -264,10 +264,7 @@ def endSession(current_user, sessionId):
             return jsonify(message="This session has already been completed")
     else:
         return jsonify(message="This session does not exist")
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
+    
 @app.route('/api/getSessions', methods = ['GET'])
 @token_required
 def getSession(current_user):
@@ -281,7 +278,7 @@ def getSession(current_user):
     if userSession:
         for data in userSession:
             sessionData = {}
-            sessionData['session_id'] = data.sessionData
+            sessionData['session_id'] = data.session_id
             sessionData['user_id'] = data.user_id
             sessionData['startDate'] = data.startDate
             sessionData['endDate'] = data.endDate
@@ -291,4 +288,9 @@ def getSession(current_user):
         return jsonify(sessionData = output)
     else:
         return jsonify(message= "You do not have session data")
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
