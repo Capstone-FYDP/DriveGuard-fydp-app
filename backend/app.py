@@ -288,7 +288,27 @@ def getSession(current_user):
         return jsonify(sessionData = output)
     else:
         return jsonify(message= "You do not have session data")
+    
+@app.route('/api/getSession/<sessionId>', methods = ['GET'])
+@token_required
+def getSession(current_user, sessionId):
+    user_data= {}
+    user_data['public_id'] = current_user.public_id
 
+    userSession = Session.query.filter_by(user_id = user_data['public_id'],  session_id=sessionId).first()
+
+    if userSession:
+        sessionData = {}
+        sessionData['session_id'] = userSession.session_id
+        sessionData['user_id'] = userSession.user_id
+        sessionData['startDate'] = userSession.startDate
+        sessionData['endDate'] = userSession.endDate
+        sessionData['status'] = userSession.status
+        sessionData['numOfIncidents'] = userSession.numOfIncidents
+        
+        return jsonify(userSession = sessionData)
+    else:
+        return jsonify(message= "Not a valid session")
 
 if __name__ == '__main__':
     app.run(debug=True)
