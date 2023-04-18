@@ -264,6 +264,33 @@ def endSession(current_user, sessionId):
             return jsonify(message="This session has already been completed")
     else:
         return jsonify(message="This session does not exist")
+    
+@app.route('/api/getSessions', methods = ['GET'])
+@token_required
+def getSession(current_user):
+    user_data= {}
+    user_data['public_id'] = current_user.public_id
+
+    userSession = Session.query.filter_by(user_id = user_data['public_id']).all()
+
+    output = []
+
+    if userSession:
+        for data in userSession:
+            sessionData = {}
+            sessionData['session_id'] = data.session_id
+            sessionData['user_id'] = data.user_id
+            sessionData['startDate'] = data.startDate
+            sessionData['endDate'] = data.endDate
+            sessionData['status'] = data.status
+            sessionData['numOfIncidents'] = data.numOfIncidents
+            output.append(sessionData)
+        return jsonify(sessionData = output)
+    else:
+        return jsonify(message= "You do not have session data")
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
