@@ -361,5 +361,3 @@ def viewSession(current_user, sessionId):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
