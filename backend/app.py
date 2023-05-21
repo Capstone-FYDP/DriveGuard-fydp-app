@@ -88,6 +88,7 @@ class Incidents(db.Model):
     date = Column(String(50))
     classification = Column(String(50))
     image_url = Column(String)
+    session_id = Column(String)
 
 class Session(db.Model):
     id = Column(Integer, primary_key=True)
@@ -168,12 +169,60 @@ def analysis(current_user):
     user_id=user_data['public_id'],
     date = now.strftime("%d/%m/%Y %H:%M:%S"),
     classification = json_data['classification'],
-    image_url = json_data['image_url'])
+    image_url = json_data['image_url'],
+    session_id = json_data['session_id'])
 
     db.session.add(newTrackData)
     db.session.commit()
 
     return jsonify(message='Data Added'),201
+@app.route('/api/getIncidents', methods=['GET'])
+@token_required
+def getIncidents(current_user):
+    user_data = {}
+    user_data['public_id'] = current_user.public_id
+
+    userIncidents = Incidents.query.filter_by(user_id = user_data['public_id']).all()
+
+    output = []
+
+    if userIncidents:
+        for data in userIncidents:
+            incidentData = {}
+            incidentData['session_id'] = data.session_id
+            incidentData['user_id'] = data.user_id
+            incidentData['date'] = data.date
+            incidentData['classification'] = data.classification
+            incidentData['uri'] = data.image_url
+           
+            output.append(incidentData)
+        return jsonify(incidentData = output)
+    else:
+        return jsonify(message= "You do not have session data")
+@app.route('/api/getIncidents/<sessionId>', methods = ["GET"])
+@token_required
+def getIncident(current_user, sessionId):
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    userIncidents = Incidents.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).all()
+
+    output = []
+
+    if userIncidents:
+        for data in userIncidents:
+            incidentData = {}
+            incidentData['session_id'] = data.session_id
+            incidentData['user_id'] = data.user_id
+            incidentData['date'] = data.date
+            incidentData['classification'] = data.classification
+            incidentData['uri'] = data.image_url
+           
+            output.append(incidentData)
+        return jsonify(incidentData = output)
+    else:
+        return jsonify(message= "You do not have session data")
 
 @app.route('/api/totaldistractions', methods=['GET'])
 @token_required
@@ -312,5 +361,3 @@ def viewSession(current_user, sessionId):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
