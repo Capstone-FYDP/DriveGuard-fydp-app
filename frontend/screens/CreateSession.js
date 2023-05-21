@@ -4,9 +4,25 @@ import CustomButton from '../components/button/custom-button';
 import CustomCard from '../components/card/custom-card';
 
 const App = () => {
+  sessions_data = fetch('http://127.0.0.1:5000/api/getSessions');
+  current_session = sessions_data.sessionData.slice(-1);
+  num_of_incidents = current_session.numOfIncidents;
+  session_id = current_session.session_id;
+
   const [text, setText] = useState('Message Prompt');
-  const onPressStart = (event) => setText('Session Started');
-  const onPressStop = (event) => setText('Session Stopped');
+  const onPressStart = (event) =>
+    fetch('http://127.0.0.1:5000/api/createSession'); //setText('Session Started');
+  const onPressStop = (event) =>
+    fetch('http://127.0.0.1:5000/api/endSession/:sessionId', {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        incidents: num_of_incidents,
+      }),
+    }); //setText('Session Stopped');
 
   return (
     <SafeAreaView style={styles.createContainer}>
