@@ -98,6 +98,7 @@ class Session(db.Model):
     endDate = Column(String(50))
     status = Column(String(50))
     numOfIncidents = Column(Integer)
+    image_url = Column(String)
 
     
 @app.route("/api/validateToken", methods=['GET'])
@@ -273,6 +274,7 @@ def predictImage(current_user):
 @token_required
 def createSession(current_user):
     now = datetime.datetime.now()
+    data = request.json
 
     user_data={}
     user_data['public_id']=current_user.public_id
@@ -283,6 +285,7 @@ def createSession(current_user):
     startDate = now.strftime("%d/%m/%Y %H:%M:%S"),
     endDate = "n/a",
     status = "ACTIVE",
+    image_url = data['image'],
     numOfIncidents=0)
 
     db.session.add(newSession)
@@ -333,6 +336,8 @@ def getSession(current_user):
             sessionData['endDate'] = data.endDate
             sessionData['status'] = data.status
             sessionData['numOfIncidents'] = data.numOfIncidents
+            sessionData['image_url']= data.image_url
+
             output.append(sessionData)
         return jsonify(sessionData = output)
     else:
@@ -354,6 +359,7 @@ def viewSession(current_user, sessionId):
         sessionData['endDate'] = userSession.endDate
         sessionData['status'] = userSession.status
         sessionData['numOfIncidents'] = userSession.numOfIncidents
+        sessionData['image_url']= userSession.image_url
         
         return jsonify(userSession = sessionData)
     else:
