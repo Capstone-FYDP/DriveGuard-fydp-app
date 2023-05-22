@@ -56,7 +56,6 @@ const MySessions = () => {
   useEffect(() => {
     if (isFocused) {
       getSessions();
-      console.log("test")
     }
   }, [isFocused]);
 
