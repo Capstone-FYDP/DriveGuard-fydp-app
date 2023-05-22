@@ -44,7 +44,6 @@ const MySessions = () => {
           type: 'error',
         });
       } else {
-        console.log(json.sessionData);
         setSessions(json.sessionData);
       }
     } catch (error) {
