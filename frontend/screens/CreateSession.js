@@ -1,28 +1,139 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, Button } from 'react-native';
 import CustomButton from '../components/button/custom-button';
 import CustomCard from '../components/card/custom-card';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const App = () => {
-  sessions_data = fetch('http://127.0.0.1:5000/api/getSessions');
-  current_session = sessions_data.sessionData.slice(-1);
-  num_of_incidents = current_session.numOfIncidents;
-  session_id = current_session.session_id;
+  // sessions_data = fetch('http://127.0.0.1:5000/api/getSessions');
+  // current_session = sessions_data.sessionData.slice(-1);
+  // num_of_incidents = current_session.numOfIncidents;
+  // session_id = current_session.session_id;
+
+  const context = useContext(MainContext);
+  const [sessions, setSessions] = useState([]);
+  const [isLoading, setLoading] = useState(true);
+
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem('auth_token');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const createSession = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/createSession`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+      });
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        console.log(json.message);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    createSession();
+  }, []);
+
+  const getSessions = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/getSessions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+      });
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        console.log(json.sessionData);
+        setSessions(json.sessionData);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getSessions();
+  }, []);
+
+  data = sessions.splice(-1);
+  const num_of_incidents = data.numOfIncidents;
+  const session_id = data.session_id;
+
+  const endSession = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        context.fetchPath + 'api/endSession/${encodeURIComponent(session_id)}',
+        {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+          body: {
+            incidents: num_of_incidents,
+          },
+        }
+      );
+      const json = await response.json;
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        console.log(json.message);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    endSession();
+  }, []);
 
   const [text, setText] = useState('Message Prompt');
-  const onPressStart = (event) =>
-    fetch('http://127.0.0.1:5000/api/createSession'); //setText('Session Started');
-  const onPressStop = (event) =>
-    fetch('http://127.0.0.1:5000/api/endSession/:sessionId', {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        incidents: num_of_incidents,
-      }),
-    }); //setText('Session Stopped');
+  const onPressStart = (event) => createSession(); //setText('Session Started');
+  const onPressStop = (event) => endSession(); //setText('Session Stopped');
 
   return (
     <SafeAreaView style={styles.createContainer}>
