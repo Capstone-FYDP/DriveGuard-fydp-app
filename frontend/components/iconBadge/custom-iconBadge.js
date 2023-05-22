@@ -63,8 +63,6 @@ const styles = StyleSheet.create({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 5,
-    marginBottom: 5,
     backgroundColor: "transparent",
   },
   badgeContainer: {

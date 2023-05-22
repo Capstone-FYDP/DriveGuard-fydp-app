@@ -5,11 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 import SessionCard from '../components/card/session-card';
+import { useIsFocused } from '@react-navigation/native';
 
 const MySessions = () => {
   const context = useContext(MainContext);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setLoading] = useState(true);
+
+  const isFocused = useIsFocused();
 
   const getToken = async () => {
     try {
@@ -52,14 +55,16 @@ const MySessions = () => {
   };
 
   useEffect(() => {
-    getSessions();
-  }, []);
+    if (isFocused) {
+      getSessions();
+      console.log("test")
+    }
+  }, [isFocused]);
 
   //Display the duration in hours and mins -> output is array [hours, mins]
   const getTimeDuration = (startDate, endDate) => {
-    let start = new Date(startDate);
-    let end = new Date(endDate);
-
+    let start = new Date(startDate)
+    let end = new Date(endDate)
     const totalMin = Math.abs(start.getTime() - end.getTime()) / (1000 * 60)
  
     const hours = (totalMin / 60);
@@ -84,7 +89,16 @@ const MySessions = () => {
             data={sessions.reverse()}
             renderItem={({item}) => {
               return(
-                <SessionCard startDate={item.startDate} duration={getTimeDuration(item.startDate, item.endDate)} status={item.status} numOfIncidents={item.numOfIncidents} />
+                <>
+                  <SessionCard
+                    imageUrl={item.image_url}
+                    startDate={new Date(item.startDate)}
+                    duration={item.status == "COMPLETED" ? getTimeDuration(item.startDate, item.endDate) : []}
+                    status={item.status}
+                    numOfIncidents={item.numOfIncidents}
+                  />
+                  <View style={{height: 20}} />
+                </>
               )
             }}
           />
@@ -120,6 +134,7 @@ const styles = StyleSheet.create({
     color: '#3f2021',
   },
   flatListContainer: {
+    flex: 1,
     width: '85%',
     justifyContent: 'space-around',
     alignSelf: 'center',
