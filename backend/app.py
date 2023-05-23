@@ -168,7 +168,7 @@ def analysis(current_user):
 
     newTrackData=Incidents(
     user_id=user_data['public_id'],
-    date = now.strftime("%d/%m/%Y %H:%M:%S"),
+    date = now.isoformat(),
     classification = json_data['classification'],
     image_url = json_data['image_url'],
     session_id = json_data['session_id'])
@@ -282,7 +282,7 @@ def createSession(current_user):
     newSession=Session(
     user_id=user_data['public_id'],
     session_id = str(uuid.uuid4()),
-    startDate = now.strftime("%d/%m/%Y %H:%M:%S"),
+    startDate = now.isoformat(),
     endDate = "n/a",
     status = "ACTIVE",
     image_url = data['image'],
@@ -307,7 +307,7 @@ def endSession(current_user, sessionId):
     if userSession:
         if userSession.status == "ACTIVE":
             userSession.status = "COMPLETED"
-            userSession.endDate = endTime.strftime("%d/%m/%Y %H:%M:%S")
+            userSession.endDate = endTime.isoformat()
             userSession.numOfIncidents = data['incidents']
             db.session.commit()
             return jsonify(message="This session has completed")
