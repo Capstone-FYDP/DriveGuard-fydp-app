@@ -278,10 +278,11 @@ def createSession(current_user):
 
     user_data={}
     user_data['public_id']=current_user.public_id
+    session = str(uuid.uuid4())
 
     newSession=Session(
     user_id=user_data['public_id'],
-    session_id = str(uuid.uuid4()),
+    session_id = session,
     startDate = now.isoformat(),
     endDate = "n/a",
     status = "ACTIVE",
@@ -291,7 +292,7 @@ def createSession(current_user):
     db.session.add(newSession)
     db.session.commit()
 
-    return jsonify(message='Session Created'),201
+    return jsonify(message=session),201
 
 @app.route('/api/endSession/<sessionId>', methods = ['PUT'])
 @token_required
