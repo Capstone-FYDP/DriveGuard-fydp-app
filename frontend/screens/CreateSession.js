@@ -51,10 +51,6 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    createSession();
-  }, []);
-
   const getSessions = async () => {
     try {
       const token = await getToken();
@@ -88,15 +84,18 @@ const App = () => {
     getSessions();
   }, []);
 
-  data = sessions.splice(-1);
-  const num_of_incidents = data.numOfIncidents;
+  const data = sessions[sessions.length-1];
+  console.log(data);
+  const incidents = data.numOfIncidents;
+  console.log(incidents);
   const session_id = data.session_id;
+  console.log(session_id);
 
   const endSession = async () => {
     try {
       const token = await getToken();
       const response = await fetch(
-        context.fetchPath + 'api/endSession/${encodeURIComponent(session_id)}',
+        context.fetchPath + `api/endSession/${session_id}`,
         {
           method: 'PUT',
           headers: {
@@ -104,9 +103,7 @@ const App = () => {
             'Content-Type': 'application/json',
             'x-access-tokens': token,
           },
-          body: {
-            incidents: num_of_incidents,
-          },
+          body: JSON.stringify({incidents})
         }
       );
       const json = await response.json;
@@ -127,13 +124,7 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    endSession();
-  }, []);
-
   const [text, setText] = useState('Message Prompt');
-  const onPressStart = (event) => createSession(); //setText('Session Started');
-  const onPressStop = (event) => endSession(); //setText('Session Stopped');
 
   return (
     <SafeAreaView style={styles.createContainer}>
@@ -156,9 +147,9 @@ const App = () => {
           <CustomButton
             type='emphasized'
             text={'Start'}
-            onPress={onPressStart}
+            onPress={createSession()}
           />
-          <CustomButton type='emphasized' text={'Stop'} onPress={onPressStop} />
+          <CustomButton type='emphasized' text={'Stop'} onPress={endSession()} />
         </View>
       </CustomCard>
     </SafeAreaView>
