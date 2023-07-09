@@ -153,7 +153,7 @@ def login():
         return jsonify(message='A user with this email does not exist.')
     if check_password_hash(user.password,login['password']):
         token=jwt.encode({'public_id': user.public_id,'exp':datetime.datetime.utcnow()+datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
-        return jsonify(token=token.decode('UTF-8'))
+        return jsonify(token=token.decode('utf-8'))
     else:
         return jsonify(message='Your email or password is incorrect'),401
 #Todo: Deprecate this endpoint once we implement the model, this is purley for testing
@@ -265,6 +265,22 @@ def predictImage(current_user):
     out = predict(model, image, device)
     res = out.split()
 
+    json_data = request.get_json()
+    now = datetime.datetime.now()
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    newTrackData=Incidents(
+    user_id=user_data['public_id'],
+    date = now.isoformat(),
+    classification = getClassficiations(res[0]),
+    image_url = json_data['image'],
+    session_id = json_data['session_id'])
+
+    db.session.add(newTrackData)
+    db.session.commit()
+
     return jsonify({
                     "classficiation": getClassficiations(res[0]),
                     "confidence": round(float(res[1]), 2)
@@ -304,12 +320,13 @@ def endSession(current_user, sessionId):
     user_data['public_id']=current_user.public_id
 
     userSession = Session.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).first()
+    incidentCount = Incidents.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).count()
 
     if userSession:
         if userSession.status == "ACTIVE":
             userSession.status = "COMPLETED"
             userSession.endDate = endTime.isoformat()
-            userSession.numOfIncidents = data['incidents']
+            userSession.numOfIncidents = incidentCount
             db.session.commit()
             return jsonify(message="This session has completed")
 
