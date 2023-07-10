@@ -334,7 +334,7 @@ def endSession(current_user, sessionId):
     else:
         return jsonify(message="This session does not exist")
     
-@app.route('/api/getSessions', methods = ['PUT'])
+@app.route('/api/getSessions', methods = ['GET'])
 @token_required
 def getSession(current_user):
     user_data= {}
