@@ -1,12 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, Button } from 'react-native';
 import CustomButton from '../components/button/custom-button';
 import CustomCard from '../components/card/custom-card';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import { MainContext } from '../context/MainContext';
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 
 const App = () => {
+  const context = useContext(MainContext);
   const [text, setText] = useState('Message Prompt');
-  const onPressStart = (event) => setText('Session Started');
-  const onPressStop = (event) => setText('Session Stopped');
+  const [sessionId, setSessionId] = useState('');
+  const [startLoading, setStartLoading] = useState(false);
+  const [stopLoading, setStopLoading] = useState(false);
+
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem('auth_token');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const createSession = async () => {
+    setStartLoading(true);
+    //TODO: need to pass the image url for the request body
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/createSession`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({ "image": "http://driving_image_url" })
+      });
+
+      const json = await response.json();
+      setSessionId(json.message);
+      setText("Start Driving Session");
+      setStartLoading(false);
+    } catch (error) {
+      console.error(error);
+      setStartLoading(false);
+    }
+  };
+
+  const endSession = async () => {
+    setStopLoading(true);
+    try {
+      const token = await getToken();
+
+      const response = await fetch(
+        context.fetchPath + `api/endSession/${sessionId}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
+
+      const json = await response.json;
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        setText(json.success);
+      }
+
+      setText("Ended Driving Session");
+      setStopLoading(false);
+    } catch (error) {
+      console.error(error);
+      setStopLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.createContainer}>
@@ -28,10 +103,26 @@ const App = () => {
         <View style={styles.buttonsContainer}>
           <CustomButton
             type='emphasized'
-            text={'Start'}
-            onPress={onPressStart}
+            text={
+              startLoading ? (
+                <LoadingIndicator color="white" isAnimating={true} />
+              ) : (
+                'Start'
+              )
+            }
+            onPress={createSession}
           />
-          <CustomButton type='emphasized' text={'Stop'} onPress={onPressStop} />
+          <CustomButton 
+            type='emphasized'
+            text={
+              stopLoading ? (
+                <LoadingIndicator color="white" isAnimating={true} />
+              ) : (
+                'Stop'
+              )
+            }
+            onPress={endSession}
+          />
         </View>
       </CustomCard>
     </SafeAreaView>

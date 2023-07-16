@@ -310,11 +310,10 @@ def createSession(current_user):
 
     return jsonify(message=session),201
 
-@app.route('/api/endSession/<sessionId>', methods = ['PUT'])
+@app.route('/api/endSession/<sessionId>', methods = ['GET'])
 @token_required
 def endSession(current_user, sessionId):
     endTime = datetime.datetime.now()
-    data = request.json
 
     user_data={}
     user_data['public_id']=current_user.public_id
@@ -328,7 +327,7 @@ def endSession(current_user, sessionId):
             userSession.endDate = endTime.isoformat()
             userSession.numOfIncidents = incidentCount
             db.session.commit()
-            return jsonify(message="This session has completed")
+            return jsonify(success="This session has completed")
 
         else:
             return jsonify(message="This session has already been completed")
