@@ -25,16 +25,13 @@ const MySessions = () => {
   const getSessions = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(
-        context.fetchPath + `api/getSessions`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-access-tokens': token,
-          },
-        }
-      );
+      const response = await fetch(context.fetchPath + `api/getSessions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+      });
       const json = await response.json();
 
       if (json.message) {
@@ -44,7 +41,25 @@ const MySessions = () => {
           type: 'error',
         });
       } else {
-        setSessions(json.sessionData);
+        setSessions(
+          json.sessionData
+            .map((item) => {
+              return {
+                ...item,
+                startDate: new Date(item.startDate),
+                endDate: new Date(item.endDate),
+              };
+            })
+            .sort((a, b) => {
+              // Put whatevers active at the top first
+              if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
+              if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+              // Sort in descending order from latest to oldest
+              if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+                return a.startDate - b.startDate;
+              return a.endDate - b.endDate;
+            })
+        );
       }
     } catch (error) {
       console.error(error);
@@ -61,16 +76,15 @@ const MySessions = () => {
 
   //Display the duration in hours and mins -> output is array [hours, mins]
   const getTimeDuration = (startDate, endDate) => {
-    let start = new Date(startDate)
-    let end = new Date(endDate)
-    const totalMin = Math.abs(start.getTime() - end.getTime()) / (1000 * 60)
- 
-    const hours = (totalMin / 60);
+    const totalMin =
+      Math.abs(startDate.getTime() - endDate.getTime()) / (1000 * 60);
+
+    const hours = totalMin / 60;
     const roundHours = Math.floor(hours);
     const minutes = (hours - roundHours) * 60;
     const roundMinutes = Math.round(minutes);
-    return [roundHours, roundMinutes]
-  }
+    return [roundHours, roundMinutes];
+  };
 
   return (
     <View style={styles.container}>
@@ -82,29 +96,33 @@ const MySessions = () => {
       {isLoading ? (
         <LoadingIndicator isAnimating={true} />
       ) : (
-        <View style={styles.flatListContainer}> 
+        <View style={styles.flatListContainer}>
           <FlatList
             data={sessions.reverse()}
-            renderItem={({item}) => {
-              return(
+            renderItem={({ item }) => {
+              return (
                 <>
                   <SessionCard
                     imageUrl={item.image_url}
-                    startDate={new Date(item.startDate)}
-                    duration={item.status == "COMPLETED" ? getTimeDuration(item.startDate, item.endDate) : []}
+                    startDate={item.startDate}
+                    duration={
+                      item.status == 'COMPLETED'
+                        ? getTimeDuration(item.startDate, item.endDate)
+                        : []
+                    }
                     status={item.status}
                     numOfIncidents={item.numOfIncidents}
                   />
-                  <View style={{height: 20}} />
+                  <View style={{ height: 20 }} />
                 </>
-              )
+              );
             }}
           />
         </View>
       )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
