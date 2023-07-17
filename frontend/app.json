@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "fydp-frontend",
-    "slug": "fydp-frontend",
+    "name": "fydp-app",
+    "slug": "fydp-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,22 +11,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.fydpfrontend"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.fydpfrontend"
+      "package": "com.anonymous.fydpapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
