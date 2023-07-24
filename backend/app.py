@@ -89,6 +89,9 @@ class Incidents(db.Model):
     classification = Column(String(50))
     image_url = Column(String)
     session_id = Column(String)
+    lat = Column(Float(precision=64))
+    lng = Column(Float(precision=64))
+
 
 class Session(db.Model):
     id = Column(Integer, primary_key=True)
@@ -171,7 +174,10 @@ def analysis(current_user):
     date = now.isoformat(),
     classification = json_data['classification'],
     image_url = json_data['image_url'],
-    session_id = json_data['session_id'])
+    session_id = json_data['session_id'],
+    lat = json_data['lattitude'],
+    lng = json_data['longitude'] 
+    )
 
     db.session.add(newTrackData)
     db.session.commit()
@@ -195,6 +201,8 @@ def getIncidents(current_user):
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
             incidentData['uri'] = data.image_url
+            incidentData['lattitude'] = data.lat
+            incidentData['longitude'] = data.lng
            
             output.append(incidentData)
         return jsonify(incidentData = output)
@@ -219,6 +227,8 @@ def getIncident(current_user, sessionId):
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
             incidentData['uri'] = data.image_url
+            incidentData['lattitude'] = data.lat
+            incidentData['longitude'] = data.lng
            
             output.append(incidentData)
         return jsonify(incidentData = output)
@@ -264,8 +274,7 @@ def predictImage(current_user):
     model, device = loadModel()
     out = predict(model, image, device)
     res = out.split()
-
-    json_data = request.get_json()
+    
     now = datetime.datetime.now()
 
     user_data={}
@@ -275,8 +284,10 @@ def predictImage(current_user):
     user_id=user_data['public_id'],
     date = now.isoformat(),
     classification = getClassficiations(res[0]),
-    image_url = json_data['image'],
-    session_id = json_data['session_id'])
+    image_url = data['image'],
+    session_id = data['session_id'],
+    lat = data['lattitude'],
+    lng = data['longitude'] )
 
     db.session.add(newTrackData)
     db.session.commit()
