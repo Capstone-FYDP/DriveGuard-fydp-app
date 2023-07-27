@@ -87,7 +87,7 @@ class Incidents(db.Model):
     user_id=Column(String(50), unique=False)
     date = Column(String(50))
     classification = Column(String(50))
-    image_url = Column(String)
+    image_b64 = Column(String)
     session_id = Column(String)
 
 class Session(db.Model):
@@ -98,7 +98,7 @@ class Session(db.Model):
     endDate = Column(String(50))
     status = Column(String(50))
     numOfIncidents = Column(Integer)
-    image_url = Column(String)
+    image_b64 = Column(String)
 
     
 @app.route("/api/validateToken", methods=['GET'])
@@ -170,7 +170,7 @@ def analysis(current_user):
     user_id=user_data['public_id'],
     date = now.isoformat(),
     classification = json_data['classification'],
-    image_url = json_data['image_url'],
+    image_b64 = json_data['image_b64'],
     session_id = json_data['session_id'])
 
     db.session.add(newTrackData)
@@ -194,7 +194,7 @@ def getIncidents(current_user):
             incidentData['user_id'] = data.user_id
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
-            incidentData['uri'] = data.image_url
+            incidentData['uri'] = data.image_b64
            
             output.append(incidentData)
         return jsonify(incidentData = output)
@@ -218,12 +218,35 @@ def getIncident(current_user, sessionId):
             incidentData['user_id'] = data.user_id
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
-            incidentData['uri'] = data.image_url
+            incidentData['uri'] = data.image_b64
            
             output.append(incidentData)
         return jsonify(incidentData = output)
     else:
         return jsonify(message= "You do not have session data")
+
+@app.route('/api/addIncident', methods = ["POST"])
+@token_required
+def addIncident(current_user):
+    json_data = request.get_json()
+    now = datetime.datetime.now()
+
+    user_data={}
+    user_data['public_id']=current_user.public_id
+
+    newTrackData=Incidents(
+    user_id=user_data['public_id'],
+    date = now.isoformat(),
+    classification = json_data['classification'],
+    image_b64 = json_data['image'],
+    session_id = json_data['session_id'])
+
+    db.session.add(newTrackData)
+    db.session.commit()
+
+    return jsonify(message="Added Incident"),201
+
+    
 
 @app.route('/api/totaldistractions', methods=['GET'])
 @token_required
@@ -265,22 +288,6 @@ def predictImage(current_user):
     out = predict(model, image, device)
     res = out.split()
 
-    json_data = request.get_json()
-    now = datetime.datetime.now()
-
-    user_data={}
-    user_data['public_id']=current_user.public_id
-
-    # newTrackData=Incidents(
-    # user_id=user_data['public_id'],
-    # date = now.isoformat(),
-    # classification = getClassficiations(res[0]),
-    # image_url = json_data['image'],
-    # session_id = json_data['session_id'])
-
-    # db.session.add(newTrackData)
-    # db.session.commit()
-
     return jsonify({
                     "classification": getClassficiations(res[0]),
                     "confidence": round(float(res[1]), 2)
@@ -302,7 +309,7 @@ def createSession(current_user):
     startDate = now.isoformat(),
     endDate = "n/a",
     status = "ACTIVE",
-    image_url = data['image'],
+    image_b64 = data['image'],
     numOfIncidents=0)
 
     db.session.add(newSession)
@@ -353,7 +360,7 @@ def getSession(current_user):
             sessionData['endDate'] = data.endDate
             sessionData['status'] = data.status
             sessionData['numOfIncidents'] = data.numOfIncidents
-            sessionData['image_url']= data.image_url
+            sessionData['image_b64']= data.image_b64
 
             output.append(sessionData)
         return jsonify(sessionData = output)
@@ -376,7 +383,7 @@ def viewSession(current_user, sessionId):
         sessionData['endDate'] = userSession.endDate
         sessionData['status'] = userSession.status
         sessionData['numOfIncidents'] = userSession.numOfIncidents
-        sessionData['image_url']= userSession.image_url
+        sessionData['image_b64']= userSession.image_b64
         
         return jsonify(userSession = sessionData)
     else:
