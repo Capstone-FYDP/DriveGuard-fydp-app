@@ -12,10 +12,13 @@ import { CardAnimationContext } from '@react-navigation/stack';
 import { toBase64 } from '../frame-processors/DistractedDrivingFrameProcessorPlugin';
 import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
+import IconBadge from '../components/iconBadge/custom-iconBadge';
+import { capitalize } from 'validate.js';
+import { capitalizeWords } from '../utils/string-utils';
 
 const App = () => {
   const context = useContext(MainContext);
-  const [text, setText] = useState('Start');
+  const [button, setButton] = useState('play');
   const [sessionId, setSessionId] = useState(null);
   const sessionIdRef = useRef(sessionId)
   sessionIdRef.current = sessionId
@@ -122,6 +125,13 @@ const App = () => {
         ]);
         addIncident(json['classification'], base64)
         setClassification(json['classification'])
+        Toast.show({
+          text1: capitalizeWords(json['classification']),
+          type: 'error',
+          autoHide: false,
+        });
+      } else if (json['classification'] == "safe driving") {
+        Toast.hide();
       }
       } catch (error) {
         console.error(error);
@@ -161,6 +171,7 @@ const App = () => {
   const createSession = async () => {
     setButtonLoading(true);
     setIncidentCoordinates([]);
+    setRouteCoordinates([]);
     //TODO: need to pass the image url for the request body
     //const photo = await camera.current.takePhoto()
     try {
@@ -178,7 +189,7 @@ const App = () => {
 
       const json = await response.json();
       setSessionId(json.message);
-      setText("End")
+      setButton("stop")
       setButtonLoading(false);
 
     } catch (error) {
@@ -188,6 +199,7 @@ const App = () => {
   };
 
   const endSession = async () => {
+    Toast.hide()
     setButtonLoading(true);
     try {
       const token = await getToken();
@@ -213,11 +225,10 @@ const App = () => {
           type: 'error',
         });
       } else {
-        setText(json.success);
         setSessionId(null)
       }
 
-      setText("Start")
+      setButton("play")
       setButtonLoading(false);
     } catch (error) {
       console.error(error);
@@ -227,58 +238,74 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.createContainer}>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.mapStyle}
-            region={{
-              latitude: 43.4729452,
-              longitude: -80.5321545,
-              latitudeDelta: 0.009,
-              longitudeDelta: 0.009,
-            }}
-            showsUserLocation
-            followsUserLocation
-            loadingEnabled
-          >
-            {
-              incidentCoordinates.map( coordinates => {
-                return <Marker
-                  coordinate={{
-                    latitude: coordinates.latitude,
-                    longitude: coordinates.longitude,
-                  }}
-                />
-              })
-            }
-          <Polyline coordinates={routeCoordinates} strokeWidth={5} />
+        <MapView
+          style={styles.mapStyle}
+          provider={PROVIDER_GOOGLE}
+          region={{
+            latitude: 43.4729452,
+            longitude: -80.5321545,
+            latitudeDelta: 0.009,
+            longitudeDelta: 0.009,
+          }}
+          showsUserLocation
+          followsUserLocation
+          loadingEnabled
+        >
+          {
+            incidentCoordinates.map( coordinates => {
+              return <Marker
+                coordinate={{
+                  latitude: coordinates.latitude,
+                  longitude: coordinates.longitude,
+                }}
+                pinColor="red"
+              />
+            })
+          }
+          <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor={context.primaryColour}/>
         </MapView>
         {isFocused && (device != null) && hasCameraPermissions &&
-          <Camera 
-            isActive={true}
-            device={device}
-            style={styles.cameraStyle}
-            preset="vga-640x480"
-            frameProcessor={sessionId != null ? frameProcessor : null}
-          />
+          <View style={styles.cameraStyle}>
+            <Camera 
+              isActive={true}
+              device={device}
+              style={styles.camera}
+              preset="vga-640x480"
+              frameProcessor={sessionId != null ? frameProcessor : null}
+            />
+          </View>
         }
-      <CustomButton
-            type='emphasized'
-            text={
-              buttonLoading ? (
-                <LoadingIndicator color="white" isAnimating={true} />
-              ) : (
-                text
-              )
-            }
-            onPress={text == "Start" ? createSession : endSession}
-        />
+        <View style={styles.startButton}>
+          <View style={styles.semiCircleWrapper}>
+            <View style={[styles.semiCircle, {backgroundColor: context.primaryColour}]} />
+          </View>
+          <View style={[styles.rectangle, {backgroundColor: context.primaryColour}]}>
+          {buttonLoading ? (
+                <LoadingIndicator color={'white'} isAnimating={true} />
+                ) : (
+                  <IconBadge 
+                    color = {"white"}
+                    onPress={button == "play" ? createSession : endSession}
+                    library="FontAwesome"
+                    icon={button}
+                    size={30}
+                  />
+            )}
+          </View>
+          </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   createContainer: {
+    position: "absolute",
+    bottom: 0,
+    top: 0,
+    right: 0,
+    left: 0,
     flex: 1,
+    alignItems: "center",
     backgroundColor: '#fffbf6',
   },
   mapStyle: {
@@ -286,6 +313,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+  },
+  hud: {
     bottom: 0,
   },
   item: {
@@ -319,22 +349,23 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   cameraStyle: {
-    width: 50,
-    height: 50,
-    marginTop: 20,
+    position: "absolute",
+    width: 100,
+    height: 75,
+    bottom: 0,
+    right: 0,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "white",
+  },
+  camera: {
+    width: "100%",
+    height: "100%",
   },
   headerTitle: {
     fontSize: 30,
     fontWeight: '600',
     color: '#3f2021',
-  },
-  buttonsContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    justifyContent: 'space-evenly',
-    alignSelf: 'center',
-    width: '85%',
   },
   lowerOuterContainer: {
     width: '100%',
@@ -354,7 +385,24 @@ const styles = StyleSheet.create({
     minHeight: 400,
   },
   startButton: {
-    backgroundColor: 'blue',
+    position: "absolute",
+    width: 75,
+    bottom: 0,
+  },
+  rectangle: {
+    width: "100%",
+    height: 50,
+  },
+  semiCircleWrapper: {
+    width: "100%", // half of the image width
+    height: 25,
+    backgroundColor: 'transparent',
+    overflow: 'hidden'
+  },
+  semiCircle: {
+    width: "100%",
+    height: 50,
+    borderRadius: 125, // half of the image width
   },
 });
 
