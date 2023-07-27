@@ -1,10 +1,11 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Home from '../../screens/Home';
-import MySessions from '../../screens/MySessions';
-import CreateSession from '../../screens/CreateSession';
-import Profile from '../../screens/Profile';
-import CustomTabBar from './CustomTabBar';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Home from "../../screens/Home";
+import MySessions from "../../screens/MySessions";
+import CreateSession from "../../screens/CreateSession";
+import Profile from "../../screens/Profile";
+import CustomTabBar from "./CustomTabBar";
+import SessionDetails from '../../screens/SessionDetails';
 
 const Tab = createBottomTabNavigator();
 
@@ -13,27 +14,27 @@ const Navbar = () => {
     <Tab.Navigator tabBar={(props) => <CustomTabBar {...props} />}>
       <Tab.Screen
         options={{ headerShown: false }}
-        name='Home'
+        name="Home"
         component={Home}
-        initialParams={{ icon: 'home' }}
+        initialParams={{ icon: "home" }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
-        name='Trips'
+        name="Trips"
         component={MySessions}
-        initialParams={{ icon: 'format-list-bulleted' }}
+        initialParams={{ icon: "format-list-bulleted" }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
-        name='Create'
+        name="Create"
         component={CreateSession}
-        initialParams={{ icon: 'plus-box' }}
+        initialParams={{ icon: "add-circle" }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
-        name='Profile'
+        name="Settings"
         component={Profile}
-        initialParams={{ icon: 'account' }}
+        initialParams={{ icon: "settings" }}
       />
     </Tab.Navigator>
   );

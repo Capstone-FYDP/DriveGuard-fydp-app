@@ -37,7 +37,9 @@ const CustomToastAlert = () => {
             <Text style={[styles.text1, styles[text1Class], { color }]}>
               {text1}
             </Text>
-            <Text style={[styles.text2, styles[text2Class]]}>{text2}</Text>
+            {text2 && 
+              <Text style={[styles.text2, styles[text2Class]]}>{text2}</Text>
+            }
           </View>
           <View style={styles.iconWrapper}>
             <IconBadge

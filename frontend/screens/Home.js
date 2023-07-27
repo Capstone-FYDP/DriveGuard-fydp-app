@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, FlatList } from 'react-native';
-import CustomCard from '../components/card/custom-card';
-import { MainContext } from '../context/MainContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
-import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import React, { useState, useEffect, useContext } from "react";
+import { StyleSheet, Text, View, FlatList } from "react-native";
+import CustomCard from "../components/card/custom-card";
+import { MainContext } from "../context/MainContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
+import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
 
 const Home = () => {
   const context = useContext(MainContext);
@@ -20,8 +20,12 @@ const Home = () => {
       >
         <View style={styles.cardContainer}>
           <View style={styles.textContainer}>
-            <Text style={[styles.title]}>{item}</Text>
-            <Text style={[styles.number]}>{classData[item]}</Text>
+            <Text style={[styles.title, { color: context.secondaryColour }]}>
+              {item}
+            </Text>
+            <Text style={[styles.number, { color: context.tertiaryColour }]}>
+              {classData[item]}
+            </Text>
           </View>
         </View>
       </CustomCard>
@@ -30,7 +34,7 @@ const Home = () => {
 
   const getToken = async () => {
     try {
-      return await AsyncStorage.getItem('auth_token');
+      return await AsyncStorage.getItem("auth_token");
     } catch (e) {
       console.log(e);
     }
@@ -42,10 +46,10 @@ const Home = () => {
       const response = await fetch(
         context.fetchPath + `api/totaldistractions`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
-            'x-access-tokens': token,
+            "Content-Type": "application/json",
+            "x-access-tokens": token,
           },
         }
       );
@@ -62,10 +66,10 @@ const Home = () => {
       const response = await fetch(
         context.fetchPath + `api/classifydistractions`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
-            'x-access-tokens': token,
+            "Content-Type": "application/json",
+            "x-access-tokens": token,
           },
         }
       );
@@ -73,9 +77,9 @@ const Home = () => {
 
       if (json.message) {
         Toast.show({
-          text1: 'Error',
+          text1: "Error",
           text2: json.message,
-          type: 'error',
+          type: "error",
         });
       } else {
         console.log(json.userData[0]);
@@ -94,10 +98,19 @@ const Home = () => {
   }, []);
 
   return (
-    <View style={styles.homeContainer}>
+    <View
+      style={[
+        styles.homeContainer,
+        { backgroundColor: context.screenBackground },
+      ]}
+    >
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
-          <Text style={styles.headerTitle}>My Driving Score</Text>
+          <Text
+            style={[styles.headerTitle, { color: context.secondaryColour }]}
+          >
+            My Driving Score
+          </Text>
         </View>
       </View>
       {isLoading ? (
@@ -106,7 +119,11 @@ const Home = () => {
         <FlatList
           ListHeaderComponent={
             <CustomCard
-              outerStyle={[styles.infoCardOuter, styles.firstCard]}
+              outerStyle={[
+                styles.infoCardOuter,
+                styles.firstCard,
+                { backgroundColor: context.primaryColour },
+              ]}
               innerStyle={styles.infoCardInner}
             >
               <View style={styles.firstCardTextContainer}>
@@ -132,32 +149,30 @@ const Home = () => {
 const styles = StyleSheet.create({
   homeContainer: {
     flex: 1,
-    backgroundColor: '#fffbf6',
   },
   upperContainer: {
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    width: "100%",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
     paddingTop: 20,
     paddingBottom: 10,
   },
   textWrapper: {
-    width: '85%',
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: "85%",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 20,
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: '600',
-    color: '#3f2021',
+    fontWeight: "600",
   },
   flatListContainer: {
-    width: '85%',
-    justifyContent: 'space-around',
-    alignSelf: 'center',
+    width: "85%",
+    justifyContent: "space-around",
+    alignSelf: "center",
   },
   listCard: {
     flex: 0.5,
@@ -166,54 +181,51 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 25,
     borderRadius: 20,
-    alignSelf: 'center',
-    display: 'flex',
-    justifyContent: 'center',
+    alignSelf: "center",
+    display: "flex",
+    justifyContent: "center",
   },
   infoCardOuter: {
-    width: '85%',
+    width: "85%",
     marginVertical: 10,
     padding: 15,
     borderRadius: 20,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   infoCardInner: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     height: 80,
   },
   firstCard: {
     marginTop: 20,
-    backgroundColor: '#f5ad47',
   },
   firstCardTextContainer: {
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+    justifyContent: "space-evenly",
+    alignItems: "center",
   },
   textContainer: {
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+    justifyContent: "space-evenly",
+    alignItems: "center",
   },
   number: {
     fontSize: 32,
-    fontWeight: '600',
-    color: '#f5ad47',
+    fontWeight: "600",
   },
   title: {
     fontSize: 14,
-    fontWeight: '400',
-    textAlign: 'center',
-    color: '#3f2021',
-    textTransform: 'capitalize',
+    fontWeight: "400",
+    textAlign: "center",
+    textTransform: "capitalize",
   },
   firstCardNumber: {
     fontSize: 40,
-    color: '#fff',
+    color: "#fff",
   },
   firstCardTitle: {
     fontSize: 20,
-    color: '#fff',
+    color: "#fff",
   },
 });
 
