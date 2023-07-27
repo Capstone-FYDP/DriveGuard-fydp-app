@@ -5,6 +5,7 @@ import MySessions from '../../screens/MySessions';
 import CreateSession from '../../screens/CreateSession';
 import Profile from '../../screens/Profile';
 import CustomTabBar from './CustomTabBar';
+import Maps from '../../screens/Maps';
 
 const Tab = createBottomTabNavigator();
 
@@ -28,6 +29,12 @@ const Navbar = () => {
         name='Create'
         component={CreateSession}
         initialParams={{ icon: 'plus-box' }}
+      />
+      <Tab.Screen
+        options={{ headerShown: false }}
+        name='Maps'
+        component={Maps}
+        initialParams={{ icon: 'map-marker' }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
