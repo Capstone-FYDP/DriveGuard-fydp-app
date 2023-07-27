@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, Button } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useCameraDevices, useFrameProcessor, Camera, runAtTargetFps } from 'react-native-vision-camera';
+import { StyleSheet, Text, View, SafeAreaView, Button, ScrollView, Image } from 'react-native';
 import CustomButton from '../components/button/custom-button';
 import CustomCard from '../components/card/custom-card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { MainContext } from '../context/MainContext';
 import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import { useIsFocused } from '@react-navigation/native';
+import { CardAnimationContext } from '@react-navigation/stack';
+import { toBase64 } from '../frame-processors/DistractedDrivingFrameProcessorPlugin';
 
 const App = () => {
   const context = useContext(MainContext);
@@ -13,6 +17,42 @@ const App = () => {
   const [sessionId, setSessionId] = useState('');
   const [startLoading, setStartLoading] = useState(false);
   const [stopLoading, setStopLoading] = useState(false);
+  const [hasCameraPermissions, setHasCameraPermissions] = useState(false);
+  const isFocused = useIsFocused();
+
+  const devices = useCameraDevices()
+  const device = devices.front
+
+  const processFrame = async (base64) => {
+    //console.log(frame.toString())
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({ "image": base64 })
+      });
+
+      const json = await response.json();
+      setText(`Class: ${json['classification']}, Conf: ${json['confidence']}`);
+
+      } catch (error) {
+        console.error(error);
+      }
+  }
+  const processFrameJS = Worklets.createRunInJsFn(processFrame)
+
+  const frameProcessor = useFrameProcessor((frame) => {
+    'worklet'
+      runAtTargetFps(1, () => {
+        'worklet'
+        const result = toBase64(frame)
+        processFrameJS(result[0])
+      })
+  }, [])
 
   const getToken = async () => {
     try {
@@ -23,6 +63,22 @@ const App = () => {
   };
 
   const createSession = async () => {
+    const cameraPermission = await Camera.getCameraPermissionStatus()
+    if (cameraPermission != "authorized") {
+      const newCameraPermission = await Camera.requestCameraPermission()
+      if (newCameraPermission == "denied") {
+        setHasCameraPermissions(false)
+        Toast.show({
+          text1: 'Error',
+          text2: "Camera permission not granted. Please go to settings and allow camera permissions for this app.",
+          type: 'error',
+        });
+        return
+      }
+    }
+    if (!hasCameraPermissions) {
+      setHasCameraPermissions(true)
+    }
     setStartLoading(true);
     //TODO: need to pass the image url for the request body
     try {
@@ -40,6 +96,7 @@ const App = () => {
       setSessionId(json.message);
       setText("Start Driving Session");
       setStartLoading(false);
+
     } catch (error) {
       console.error(error);
       setStartLoading(false);
@@ -85,46 +142,57 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.createContainer}>
-      <View style={styles.upperContainer}>
-        <View style={styles.textWrapper}>
-          <Text style={styles.headerTitle}>Start Session</Text>
+      <ScrollView>
+        <View style={styles.upperContainer}>
+          <View style={styles.textWrapper}>
+            <Text style={styles.headerTitle}>Start Session</Text>
+          </View>
+          {isFocused && (device != null) && hasCameraPermissions &&
+            <Camera 
+              device={device}
+              style={styles.cameraStyle}
+              isActive={true}
+              preset="vga-640x480"
+              frameProcessor={frameProcessor}
+            />
+          }
         </View>
-      </View>
 
-      <View style={styles.item}>
-        <Text style={styles.title}>{text}</Text>
-      </View>
-
-      <CustomCard
-        outerStyle={styles.lowerOuterContainer}
-        innerStyle={styles.lowerInnerContainer}
-        noTouchOpacity
-      >
-        <View style={styles.buttonsContainer}>
-          <CustomButton
-            type='emphasized'
-            text={
-              startLoading ? (
-                <LoadingIndicator color="white" isAnimating={true} />
-              ) : (
-                'Start'
-              )
-            }
-            onPress={createSession}
-          />
-          <CustomButton 
-            type='emphasized'
-            text={
-              stopLoading ? (
-                <LoadingIndicator color="white" isAnimating={true} />
-              ) : (
-                'Stop'
-              )
-            }
-            onPress={endSession}
-          />
+        <View style={styles.item}>
+          <Text style={styles.title}>{text}</Text>
         </View>
-      </CustomCard>
+
+        <CustomCard
+          outerStyle={styles.lowerOuterContainer}
+          innerStyle={styles.lowerInnerContainer}
+          noTouchOpacity
+        >
+          <View style={styles.buttonsContainer}>
+            <CustomButton
+              type='emphasized'
+              text={
+                startLoading ? (
+                  <LoadingIndicator color="white" isAnimating={true} />
+                ) : (
+                  'Start'
+                )
+              }
+              onPress={createSession}
+            />
+            <CustomButton 
+              type='emphasized'
+              text={
+                stopLoading ? (
+                  <LoadingIndicator color="white" isAnimating={true} />
+                ) : (
+                  'Stop'
+                )
+              }
+              onPress={endSession}
+            />
+          </View>
+        </CustomCard>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -162,6 +230,11 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 20,
+  },
+  cameraStyle: {
+    width: '85%',
+    height: 300,
     marginTop: 20,
   },
   headerTitle: {
