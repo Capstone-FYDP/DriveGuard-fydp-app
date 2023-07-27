@@ -271,18 +271,18 @@ def predictImage(current_user):
     user_data={}
     user_data['public_id']=current_user.public_id
 
-    newTrackData=Incidents(
-    user_id=user_data['public_id'],
-    date = now.isoformat(),
-    classification = getClassficiations(res[0]),
-    image_url = json_data['image'],
-    session_id = json_data['session_id'])
+    # newTrackData=Incidents(
+    # user_id=user_data['public_id'],
+    # date = now.isoformat(),
+    # classification = getClassficiations(res[0]),
+    # image_url = json_data['image'],
+    # session_id = json_data['session_id'])
 
-    db.session.add(newTrackData)
-    db.session.commit()
+    # db.session.add(newTrackData)
+    # db.session.commit()
 
     return jsonify({
-                    "classficiation": getClassficiations(res[0]),
+                    "classification": getClassficiations(res[0]),
                     "confidence": round(float(res[1]), 2)
                     })
 
