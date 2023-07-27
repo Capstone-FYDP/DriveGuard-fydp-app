@@ -6,7 +6,7 @@ import CustomCard from './custom-card';
 import IconBadge from '../iconBadge/custom-iconBadge';
 
 const SessionCard = (props) => {
-    const {imageUrl, startDate, duration, status, numOfIncidents} = props
+    const {imageUrl, startDate, duration, status, numOfIncidents, onPress} = props
 
     const context = useContext(MainContext);
 
@@ -45,6 +45,7 @@ const SessionCard = (props) => {
         <CustomCard
             outerStyle={[styles.infoCardOuter, styles.firstCard]}
             innerStyle={styles.infoCardInner}
+            onPress = {props.onPress}
         >
             <Image
                 style={styles.infoCardImage}
