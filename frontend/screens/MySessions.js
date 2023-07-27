@@ -41,7 +41,25 @@ const MySessions = ({ navigation }) => {
           type: "error",
         });
       } else {
-        setSessions(json.sessionData);
+        setSessions(
+          json.sessionData
+            .map((item) => {
+              return {
+                ...item,
+                startDate: new Date(item.startDate),
+                endDate: new Date(item.endDate),
+              };
+            })
+            .sort((a, b) => {
+              // Put whatevers active at the top first
+              if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
+              if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+              // Sort in descending order from latest to oldest
+              if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+                return a.startDate - b.startDate;
+              return a.endDate - b.endDate;
+            })
+        );
       }
     } catch (error) {
       console.error(error);
@@ -58,9 +76,8 @@ const MySessions = ({ navigation }) => {
 
   //Display the duration in hours and mins -> output is array [hours, mins]
   const getTimeDuration = (startDate, endDate) => {
-    let start = new Date(startDate);
-    let end = new Date(endDate);
-    const totalMin = Math.abs(start.getTime() - end.getTime()) / (1000 * 60);
+    const totalMin =
+      Math.abs(startDate.getTime() - endDate.getTime()) / (1000 * 60);
 
     const hours = totalMin / 60;
     const roundHours = Math.floor(hours);
@@ -93,9 +110,9 @@ const MySessions = ({ navigation }) => {
                 <>
                   <SessionCard
                     imageUrl={item.image_url}
-                    startDate={new Date(item.startDate)}
+                    startDate={item.startDate}
                     duration={
-                      item.status == "COMPLETED"
+                      item.status == 'COMPLETED'
                         ? getTimeDuration(item.startDate, item.endDate)
                         : []
                     }
