@@ -28,19 +28,19 @@ const Navbar = () => {
         options={{ headerShown: false }}
         name="Create"
         component={CreateSession}
-        initialParams={{ icon: "plus-box" }}
+        initialParams={{ icon: "add-circle" }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
         name="Maps"
         component={Maps}
-        initialParams={{ icon: "map-marker" }}
+        initialParams={{ icon: "map" }}
       />
       <Tab.Screen
         options={{ headerShown: false }}
-        name="Profile"
+        name="Settings"
         component={Profile}
-        initialParams={{ icon: "account" }}
+        initialParams={{ icon: "settings" }}
       />
     </Tab.Navigator>
   );

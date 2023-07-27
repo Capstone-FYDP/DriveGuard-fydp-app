@@ -1,10 +1,10 @@
-import React, { useState, useContext } from 'react';
-import { MainContext } from '../../context/MainContext';
-import { StyleSheet, View } from 'react-native';
-import TabButton from './TabButton';
+import React, { useState, useContext } from "react";
+import { MainContext } from "../../context/MainContext";
+import { StyleSheet, View } from "react-native";
+import TabButton from "./TabButton";
 
 const CustomTabBar = ({ state, navigation }) => {
-  const [selected, setSelected] = useState('Home');
+  const [selected, setSelected] = useState("Home");
 
   const context = useContext(MainContext);
 
@@ -12,11 +12,11 @@ const CustomTabBar = ({ state, navigation }) => {
     return word.charAt(0).toUpperCase() + word.slice(1);
   };
 
-  const theme = context.theme !== 'dark' ? capitalize(context.theme) : 'Dark';
-  const containerClass = 'container' + theme;
+  const theme = context.theme !== "dark" ? capitalize(context.theme) : "Dark";
+  const containerClass = "container" + theme;
 
   const handleSelectedTab = (currentTab) =>
-    currentTab === selected ? '#f5ad47' : '#bdbdbd';
+    currentTab === selected ? context.primaryColour : "#bdbdbd";
 
   const handlePress = (currentTab, index) => {
     if (state.index !== index) {
@@ -44,18 +44,18 @@ const CustomTabBar = ({ state, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     height: 70,
     elevation: 10,
     borderTopWidth: 0,
   },
   containerDark: {
-    backgroundColor: '#212121',
+    backgroundColor: "#212121",
   },
   containerLight: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
 });
 
