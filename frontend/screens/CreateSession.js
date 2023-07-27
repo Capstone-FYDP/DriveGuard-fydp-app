@@ -1,18 +1,93 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, Button } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import { useCameraDevices, useFrameProcessor, Camera, runAtTargetFps } from 'react-native-vision-camera';
+import { StyleSheet, Text, View, SafeAreaView, Button, ScrollView, Image } from 'react-native';
 import CustomButton from '../components/button/custom-button';
 import CustomCard from '../components/card/custom-card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { MainContext } from '../context/MainContext';
 import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import { useIsFocused } from '@react-navigation/native';
+import { CardAnimationContext } from '@react-navigation/stack';
+import { toBase64 } from '../frame-processors/DistractedDrivingFrameProcessorPlugin';
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
+import * as Location from "expo-location";
 
 const App = () => {
   const context = useContext(MainContext);
-  const [text, setText] = useState('Message Prompt');
-  const [sessionId, setSessionId] = useState('');
-  const [startLoading, setStartLoading] = useState(false);
-  const [stopLoading, setStopLoading] = useState(false);
+  const [text, setText] = useState('Start');
+  const [sessionId, setSessionId] = useState(null);
+  const sessionIdRef = useRef(sessionId)
+  sessionIdRef.current = sessionId
+  const [buttonLoading, setButtonLoading] = useState(false);
+  const [hasCameraPermissions, setHasCameraPermissions] = useState(false);
+  const [classification, setClassification] = useState("")
+  const classRef = useRef(classification)
+  classRef.current = classification
+  const isFocused = useIsFocused();
+
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const routeCoordinatesRef = useRef(routeCoordinates)
+  routeCoordinatesRef.current = routeCoordinates
+  const [incidentCoordinates, setIncidentCoordinates] = useState([]);
+  const incidentCoordinatesRef = useRef(incidentCoordinates);
+  incidentCoordinatesRef.current = incidentCoordinates;
+  const [location, setLocation] = useState(false);
+  const locationRef = useRef(location);
+  locationRef.current = location;
+
+  // const camera = useRef<Camera>(null)
+  const devices = useCameraDevices()
+  const device = devices.front
+
+  useEffect(() => {
+    (async () => {
+      let cameraStatus = await Camera.getCameraPermissionStatus()
+      if (cameraStatus != 'authorized') {
+        cameraStatus = await Camera.requestCameraPermission()
+        if (cameraStatus == "denied") {
+          Toast.show({
+            text1: 'Error',
+            text2: "Camera permission not granted. Please go to settings and allow camera permissions for this app.",
+            type: 'error',
+          });
+        }
+      }
+      if (cameraStatus == 'authorized') {
+        setHasCameraPermissions(true)
+      }
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Toast.show({
+          text1: 'Error',
+          text2: "Permission to access location was denied",
+          type: 'error',
+        });
+      } else {
+        const locationSubscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (location) => {
+            setLocation(location);
+            if (sessionIdRef.current != null) {
+              setRouteCoordinates([
+                ...routeCoordinatesRef.current,
+                {
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                },
+              ]);
+            }
+          }
+        );
+      }
+      return () => locationSubscription.remove();
+    })();
+  }, []);
 
   const getToken = async () => {
     try {
@@ -22,9 +97,72 @@ const App = () => {
     }
   };
 
+  const processFrame = async (base64) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify(
+          { "image": base64 }
+        )
+      });
+
+      const json = await response.json();
+      if (json['classification'] != "safe driving" && json['classification'] != classRef.current) {
+        setIncidentCoordinates([
+          ...incidentCoordinatesRef.current,
+          {
+            latitude: locationRef.current.coords.latitude,
+            longitude: locationRef.current.coords.longitude,
+          },
+        ]);
+        addIncident(json['classification'], base64)
+        setClassification(json['classification'])
+      }
+      } catch (error) {
+        console.error(error);
+      }
+  }
+  const processFrameJS = Worklets.createRunInJsFn(processFrame)
+
+  const frameProcessor = useFrameProcessor((frame) => {
+    'worklet'
+      runAtTargetFps(1, () => {
+        'worklet'
+        const result = toBase64(frame)
+        processFrameJS(result[0])
+      })
+  }, [])
+
+  const addIncident = async (classification, base64) => {
+    try {
+      const token = await getToken();
+      await fetch(context.fetchPath + `api/addIncident`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({
+          "classification": classification,
+          "image": base64,
+          "session_id": sessionIdRef.current,
+        })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const createSession = async () => {
-    setStartLoading(true);
+    setButtonLoading(true);
+    setIncidentCoordinates([]);
     //TODO: need to pass the image url for the request body
+    //const photo = await camera.current.takePhoto()
     try {
       const token = await getToken();
       const response = await fetch(context.fetchPath + `api/createSession`, {
@@ -33,21 +171,24 @@ const App = () => {
           'Content-Type': 'application/json',
           'x-access-tokens': token,
         },
-        body: JSON.stringify({ "image": "http://driving_image_url" })
+        body: JSON.stringify({
+          "image": "http://driving_image_url"
+        })
       });
 
       const json = await response.json();
       setSessionId(json.message);
-      setText("Start Driving Session");
-      setStartLoading(false);
+      setText("End")
+      setButtonLoading(false);
+
     } catch (error) {
       console.error(error);
-      setStartLoading(false);
+      setButtonLoading(false);
     }
   };
 
   const endSession = async () => {
-    setStopLoading(true);
+    setButtonLoading(true);
     try {
       const token = await getToken();
 
@@ -73,58 +214,64 @@ const App = () => {
         });
       } else {
         setText(json.success);
+        setSessionId(null)
       }
 
-      setText("Ended Driving Session");
-      setStopLoading(false);
+      setText("Start")
+      setButtonLoading(false);
     } catch (error) {
       console.error(error);
-      setStopLoading(false);
+      setButtonLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.createContainer}>
-      <View style={styles.upperContainer}>
-        <View style={styles.textWrapper}>
-          <Text style={styles.headerTitle}>Start Session</Text>
-        </View>
-      </View>
-
-      <View style={styles.item}>
-        <Text style={styles.title}>{text}</Text>
-      </View>
-
-      <CustomCard
-        outerStyle={styles.lowerOuterContainer}
-        innerStyle={styles.lowerInnerContainer}
-        noTouchOpacity
-      >
-        <View style={styles.buttonsContainer}>
-          <CustomButton
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.mapStyle}
+            region={{
+              latitude: 43.4729452,
+              longitude: -80.5321545,
+              latitudeDelta: 0.009,
+              longitudeDelta: 0.009,
+            }}
+            showsUserLocation
+            followsUserLocation
+            loadingEnabled
+          >
+            {
+              incidentCoordinates.map( coordinates => {
+                return <Marker
+                  coordinate={{
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude,
+                  }}
+                />
+              })
+            }
+          <Polyline coordinates={routeCoordinates} strokeWidth={5} />
+        </MapView>
+        {isFocused && (device != null) && hasCameraPermissions &&
+          <Camera 
+            isActive={true}
+            device={device}
+            style={styles.cameraStyle}
+            preset="vga-640x480"
+            frameProcessor={sessionId != null ? frameProcessor : null}
+          />
+        }
+      <CustomButton
             type='emphasized'
             text={
-              startLoading ? (
+              buttonLoading ? (
                 <LoadingIndicator color="white" isAnimating={true} />
               ) : (
-                'Start'
+                text
               )
             }
-            onPress={createSession}
-          />
-          <CustomButton 
-            type='emphasized'
-            text={
-              stopLoading ? (
-                <LoadingIndicator color="white" isAnimating={true} />
-              ) : (
-                'Stop'
-              )
-            }
-            onPress={endSession}
-          />
-        </View>
-      </CustomCard>
+            onPress={text == "Start" ? createSession : endSession}
+        />
     </SafeAreaView>
   );
 };
@@ -133,6 +280,13 @@ const styles = StyleSheet.create({
   createContainer: {
     flex: 1,
     backgroundColor: '#fffbf6',
+  },
+  mapStyle: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   item: {
     padding: 60,
@@ -162,6 +316,11 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 20,
+  },
+  cameraStyle: {
+    width: 50,
+    height: 50,
     marginTop: 20,
   },
   headerTitle: {

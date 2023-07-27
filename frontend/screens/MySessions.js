@@ -70,10 +70,16 @@ const MySessions = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: context.screenBackground }]}
+    >
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
-          <Text style={styles.headerTitle}>My Trips</Text>
+          <Text
+            style={[styles.headerTitle, { color: context.secondaryColour }]}
+          >
+            My Trips
+          </Text>
         </View>
       </View>
       {isLoading ? (
@@ -115,7 +121,6 @@ const MySessions = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fffbf6",
   },
   upperContainer: {
     width: "100%",
@@ -130,12 +135,11 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    marginVertical: 20,
   },
   headerTitle: {
     fontSize: 30,
     fontWeight: "600",
-    color: "#3f2021",
   },
   flatListContainer: {
     flex: 1,

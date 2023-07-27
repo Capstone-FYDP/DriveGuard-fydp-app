@@ -14,14 +14,20 @@ import { ScrollView } from "react-native-gesture-handler";
 
 const Signup = ({ navigation }) => {
   const context = useContext(MainContext);
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const errorCheckOrder = ["firstName", "lastName", "email", "password", "confirmPassword"];
+  const errorCheckOrder = [
+    "firstName",
+    "lastName",
+    "email",
+    "password",
+    "confirmPassword",
+  ];
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -55,16 +61,23 @@ const Signup = ({ navigation }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ firstName, lastName, email, password, confirmPassword }),
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+          confirmPassword,
+        }),
       });
 
       json = await response.json();
-      console.log("test2")
+      console.log("test2");
 
       if (json.message == "User Created") {
         Toast.show({
           text1: "Registered 🎉",
-          text2: "Your account has been created! Log in with your new credentials!",
+          text2:
+            "Your account has been created! Log in with your new credentials!",
           type: "success",
         });
         navigation.navigate("Signin");
@@ -80,24 +93,29 @@ const Signup = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      colors={context.gradient}
-      style={styles.mainContainer}
+    <View
+      style={[styles.mainContainer, { backgroundColor: context.primaryColour }]}
     >
       <View style={styles.upperContainer}>
         <CustomHeader additionalStyles={styles.signupHeader}>
-          Signup
+          Sign Up
         </CustomHeader>
       </View>
       <CustomCard
-        outerStyle={styles.lowerOuterContainer}
+        outerStyle={[
+          styles.lowerOuterContainer,
+          { backgroundColor: context.screenBackground },
+        ]}
         innerStyle={styles.lowerInnerContainer}
         noTouchOpacity
       >
         <View style={styles.allInputContainer}>
-          <CustomHeader additionalStyles={styles.createAccountHeader}>
+          <CustomHeader
+            additionalStyles={[
+              styles.createAccountHeader,
+              { color: context.secondaryColour },
+            ]}
+          >
             Create Account
           </CustomHeader>
           <ScrollView style={styles.scrollInputContainer}>
@@ -152,14 +170,14 @@ const Signup = ({ navigation }) => {
                 loading ? (
                   <LoadingIndicator color="white" isAnimating={true} />
                 ) : (
-                  "Signup"
+                  "Sign Up"
                 )
               }
             />
           </View>
         </View>
       </CustomCard>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -202,7 +220,7 @@ const styles = StyleSheet.create({
   allInputContainer: {
     width: "100%",
     display: "flex",
-    height: 600
+    height: 600,
   },
   inputContainer: {
     flex: 1,
