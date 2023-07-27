@@ -36,12 +36,6 @@ const Navbar = () => {
         component={Profile}
         initialParams={{ icon: "settings" }}
       />
-      <Tab.Screen
-        options={{ headerShown: false }}
-        name='Single Trip'
-        component={SessionDetails}
-        initialParams={{ icon: 'account' }}
-      />
     </Tab.Navigator>
   );
 };
