@@ -1,13 +1,13 @@
-import React from 'react';
-import { Stack } from './context/MainContext';
-import { NavigationContainer } from '@react-navigation/native';
-import Navbar from './components/Navbar/Navbar';
-import AuthenticationScreens from './screens/authenticationScreens/exportAuthenticationScreens';
-import CustomToastAlert from './components/alerts/custom-toast-alert'
+import React from "react";
+import { Stack } from "./context/MainContext";
+import { NavigationContainer } from "@react-navigation/native";
+import Navbar from "./components/Navbar/Navbar";
+import AuthenticationScreens from "./screens/authenticationScreens/exportAuthenticationScreens";
+import CustomToastAlert from "./components/alerts/custom-toast-alert";
 import { useFonts } from "expo-font";
+import SessionDetails from "./screens/SessionDetails";
 
 export default function MainCode() {
-
   const [loaded] = useFonts({
     "Inter-Regular": require("./assets/fonts/Inter-Regular.ttf"),
     "Oxygen-Regular": require("./assets/fonts/Oxygen-Regular.ttf"),
@@ -27,6 +27,11 @@ export default function MainCode() {
               options={{ headerShown: false }}
               name="Navbar"
               component={Navbar}
+            ></Stack.Screen>
+            <Stack.Screen
+              options={{ headerShown: false }}
+              name="SessionDetails"
+              component={SessionDetails}
             ></Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>

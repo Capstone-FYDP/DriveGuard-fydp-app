@@ -7,7 +7,7 @@ import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
 import SessionCard from "../components/card/session-card";
 import { useIsFocused } from "@react-navigation/native";
 
-const MySessions = () => {
+const MySessions = ({ navigation }) => {
   const context = useContext(MainContext);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setLoading] = useState(true);
@@ -101,6 +101,11 @@ const MySessions = () => {
                     }
                     status={item.status}
                     numOfIncidents={item.numOfIncidents}
+                    onPress={() =>
+                      navigation.navigate("SessionDetails", {
+                        session: item,
+                      })
+                    }
                   />
                   <View style={{ height: 20 }} />
                 </>

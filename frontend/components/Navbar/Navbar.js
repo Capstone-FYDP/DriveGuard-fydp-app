@@ -6,6 +6,7 @@ import CreateSession from "../../screens/CreateSession";
 import Profile from "../../screens/Profile";
 import CustomTabBar from "./CustomTabBar";
 import Maps from "../../screens/Maps";
+import SessionDetails from '../../screens/SessionDetails';
 
 const Tab = createBottomTabNavigator();
 
@@ -41,6 +42,12 @@ const Navbar = () => {
         name="Settings"
         component={Profile}
         initialParams={{ icon: "settings" }}
+      />
+      <Tab.Screen
+        options={{ headerShown: false }}
+        name='Single Trip'
+        component={SessionDetails}
+        initialParams={{ icon: 'account' }}
       />
     </Tab.Navigator>
   );
