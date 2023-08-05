@@ -42,6 +42,7 @@ const App = () => {
   // const camera = useRef<Camera>(null)
   const devices = useCameraDevices()
   const device = devices.front
+  // const camera1 = useRef<Camera>(null)
 
   useEffect(() => {
     (async () => {
@@ -133,9 +134,9 @@ const App = () => {
       } else if (json['classification'] == "safe driving") {
         Toast.hide();
       }
-      } catch (error) {
-        console.error(error);
-      }
+    } catch (error) {
+      console.error(error);
+    }
   }
   const processFrameJS = Worklets.createRunInJsFn(processFrame)
 
@@ -144,7 +145,11 @@ const App = () => {
       runAtTargetFps(1, () => {
         'worklet'
         const result = toBase64(frame)
-        processFrameJS(result[0])
+        if (result[0] != null) {
+          console.log(result[0])
+        } else {
+          processFrameJS(result[1])
+        }
       })
   }, [])
 
@@ -267,10 +272,12 @@ const App = () => {
         {isFocused && (device != null) && hasCameraPermissions &&
           <View style={styles.cameraStyle}>
             <Camera 
+              // ref={camera}
+              // photo={true}
               isActive={true}
               device={device}
               style={styles.camera}
-              preset="vga-640x480"
+              preset="cif-352x288"
               frameProcessor={sessionId != null ? frameProcessor : null}
             />
           </View>
