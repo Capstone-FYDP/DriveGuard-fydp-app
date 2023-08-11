@@ -1,37 +1,38 @@
 package com.anonymous.fydpapp.distracteddrivingframeprocessor;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.graphics.YuvImage;
-import android.media.ThumbnailUtils;
-import android.util.Base64;
+import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
-import androidx.camera.core.internal.utils.ImageUtil;
 
 import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.bridge.WritableNativeArray;
+import com.google.android.gms.tflite.client.TfLiteInitializationOptions;
+import com.google.android.gms.tflite.gpu.support.TfLiteGpu;
 import com.mrousavy.camera.frameprocessor.Frame;
 import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
+import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.label.Category;
+import org.tensorflow.lite.task.core.BaseOptions;
+import org.tensorflow.lite.task.gms.vision.TfLiteVision;
+import org.tensorflow.lite.task.gms.vision.classifier.Classifications;
+import org.tensorflow.lite.task.gms.vision.classifier.ImageClassifier;
+
+import java.io.IOException;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
 import io.github.crow_misia.libyuv.AbgrBuffer;
 import io.github.crow_misia.libyuv.FilterMode;
-import io.github.crow_misia.libyuv.I420Buffer;
-import io.github.crow_misia.libyuv.Nv21Buffer;
 import io.github.crow_misia.libyuv.RotateMode;
 import io.github.crow_misia.libyuv.ext.ImageProxyExt;
 
 public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin {
+  ImageClassifier imageClassifier = null;
   @Override
   public Object callback(@Nullable Frame frame, @Nullable ReadableNativeMap params) {
     // code goes here
@@ -40,19 +41,22 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
       array.pushString("Error: Null frame");
       return array;
     }
+    if (imageClassifier == null) {
+      array.pushString("Error: Image classifier not ready");
+      return array;
+    }
     ImageProxy image = frame.getImageProxy();
 
     // Determine which type of YUV_420_888 image this is (I420, NV12, NV21) and handle
     // the ImageProxy accordingly. Regardless of which type, convert it to NV21.
-    Nv21Buffer nv21Buffer;
+    AbgrBuffer abgrBuffer = AbgrBuffer.Factory.allocate(image.getWidth(), image.getHeight());
+    
     if (YuvFormatDifferentiator.isI420(image)) {
-      nv21Buffer = Nv21Buffer.Factory.allocate(image.getWidth(), image.getHeight());
-      ImageProxyExt.toI420Buffer(image).convertTo(nv21Buffer);
+      ImageProxyExt.toI420Buffer(image).convertTo(abgrBuffer);
     } else if (YuvFormatDifferentiator.isNV12(image)) {
-      nv21Buffer = Nv21Buffer.Factory.allocate(image.getWidth(), image.getHeight());
-      ImageProxyExt.toNv12Buffer(image).convertTo(nv21Buffer);
+      ImageProxyExt.toNv12Buffer(image).convertTo(abgrBuffer);
     } else if (YuvFormatDifferentiator.isNV21(image)){
-      nv21Buffer = ImageProxyExt.toNv21Buffer(image);
+      ImageProxyExt.toNv21Buffer(image).convertTo(abgrBuffer);
     } else {
       array.pushString("Error: Invalid image type");
       return array;
@@ -62,9 +66,9 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     int imageRotation = image.getImageInfo().getRotationDegrees();
     int rotatedWidth = imageRotation % 180 == 0 ? image.getWidth() : image.getHeight();
     int rotatedHeight = imageRotation % 180 == 0 ? image.getHeight() : image.getWidth();
-    Nv21Buffer nv21BufferRotated = Nv21Buffer.Factory.allocate(rotatedWidth, rotatedHeight);
+    AbgrBuffer abgrBufferRotated = AbgrBuffer.Factory.allocate(rotatedWidth, rotatedHeight);
 
-    nv21Buffer.rotate(nv21BufferRotated, getRotateMode(image.getImageInfo().getRotationDegrees()));
+    abgrBuffer.rotate(abgrBufferRotated, getRotateMode(image.getImageInfo().getRotationDegrees()));
 
     // Scale image to required size for ML model
     final int targetWidth = 224;
@@ -74,20 +78,40 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     float scale = Math.max(xScale, yScale);
     int scaledWidth = (int)(scale*rotatedWidth);
     int scaledHeight = (int)(scale*rotatedHeight);
-    Nv21Buffer nv21BufferScaled = Nv21Buffer.Factory.allocate(scaledWidth, scaledHeight);
+    AbgrBuffer abgrBufferScaled = AbgrBuffer.Factory.allocate(scaledWidth, scaledHeight);
 
-    nv21BufferRotated.scale(nv21BufferScaled, FilterMode.BILINEAR);
+    abgrBufferRotated.scale(abgrBufferScaled, FilterMode.BILINEAR);
 
-    // Convert to a YUV Image and compress to JPEG
-    YuvImage yuvImage = new YuvImage(nv21BufferScaled.asByteArray(), ImageFormat.NV21, scaledWidth, scaledHeight, null);
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    yuvImage.compressToJpeg(new Rect((yuvImage.getWidth()/2) - (targetWidth/2), (yuvImage.getHeight()/2) - (targetHeight/2), (yuvImage.getWidth()/2) + (targetWidth/2), (yuvImage.getHeight()/2) + (targetHeight/2)) , 100, out);
+    // Crop image to required size for ML model
+    Bitmap abgrBitmapScaled = abgrBufferScaled.asBitmap();
+    Bitmap abgrBitmapCropped = Bitmap.createBitmap(
+      abgrBitmapScaled,
+      scaledWidth/2 - targetWidth/2,
+      scaledHeight/2 - targetHeight/2,
+      targetWidth,
+      targetHeight
+    );
+    abgrBitmapScaled.recycle();
 
-    byte[] byteArray = out.toByteArray();
+    List<Classifications> classificationsList = imageClassifier.classify(TensorImage.fromBitmap(abgrBitmapCropped));
+//    for (Classifications classifications : classificationsList) {
+//      Log.d("DistractedDriving", "classification:");
+//      for (Category category : classifications.getCategories()) {
+//        Log.d("DistractedDriving", String.format("class: %s, score: %f", category.getDisplayName(), category.getScore()));
+//      }
+//    }
+    abgrBitmapCropped.recycle();
 
     array.pushNull();
-    array.pushString(Base64.encodeToString(byteArray, Base64.DEFAULT));
+    if (classificationsList.size() > 0 && classificationsList.get(0).getCategories().size() > 0) {
+      Category classification = classificationsList.get(0).getCategories().get(0);
+      array.pushString(classification.getDisplayName());
+      array.pushDouble(classification.getScore());
+    } else {
+      array.pushNull();
+    }
     return array;
+
   }
 
   RotateMode getRotateMode(int rotationDegrees) {
@@ -103,5 +127,43 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     }
   }
 
-  public DistractedDrivingFrameProcessorPlugin() {}
+  public DistractedDrivingFrameProcessorPlugin(Context context) {
+    // Initialize Image classifier
+    TfLiteGpu.isGpuDelegateAvailable(context).addOnCompleteListener(gpuTask -> {
+      if (gpuTask.isSuccessful()) {
+        TfLiteInitializationOptions.Builder tfLiteInitializationOptionsBuilder = TfLiteInitializationOptions.builder();
+        if (gpuTask.getResult()) {
+          Log.d("DistractedDriving", "Using GPU Delegate for Tensorflow");
+          tfLiteInitializationOptionsBuilder.setEnableGpuDelegateSupport(true);
+        }
+        TfLiteVision.initialize(context, tfLiteInitializationOptionsBuilder.build()).addOnCompleteListener(task -> {
+          if (task.isSuccessful()) {
+            if (TfLiteVision.isInitialized()) {
+              BaseOptions.Builder baseOptionsBuilder = BaseOptions.builder();
+              if (gpuTask.getResult()) {
+                baseOptionsBuilder = baseOptionsBuilder.useGpu();
+              }
+              ImageClassifier.ImageClassifierOptions options =
+                      ImageClassifier.ImageClassifierOptions.builder()
+                              .setBaseOptions(baseOptionsBuilder.build())
+                              .setMaxResults(1)
+                              .build();
+              try {
+                imageClassifier = ImageClassifier.createFromFileAndOptions(
+                        context, "lite-model_aiy_vision_classifier_birds_V1_3.tflite", options);
+              } catch (IOException e) {
+                Log.e("DistractedDriving", String.format("Error creating image classifier: %s", e.getMessage()));
+              }
+            } else {
+              Log.e("DistractedDriving", "TfLiteVision not yet initialized");
+            }
+          } else {
+            Log.e("DistractedDriving", String.format("Error initializing TfLiteVision: %s", task.getException().getMessage()));
+          }
+        });
+      } else {
+        Log.e("DistractedDriving", String.format("Error checking GPU compatibility: %s", gpuTask.getException().getMessage()));
+      }
+    });
+  }
 }

@@ -39,6 +39,8 @@ const App = () => {
   const locationRef = useRef(location);
   locationRef.current = location;
 
+  const [base64, setBase64] = useState(null);
+
   // const camera = useRef<Camera>(null)
   const devices = useCameraDevices()
   const device = devices.front
@@ -101,22 +103,10 @@ const App = () => {
     }
   };
 
-  const processFrame = async (base64) => {
+  const processFrame = async (classif) => {
+    //setBase64(base64)
     try {
-      const token = await getToken();
-      const response = await fetch(context.fetchPath + `api/predict`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-tokens': token,
-        },
-        body: JSON.stringify(
-          { "image": base64 }
-        )
-      });
-
-      const json = await response.json();
-      if (json['classification'] != "safe driving" && json['classification'] != classRef.current) {
+      if (classif != "None" && classif != classRef.current) {
         setIncidentCoordinates([
           ...incidentCoordinatesRef.current,
           {
@@ -124,14 +114,14 @@ const App = () => {
             longitude: locationRef.current.coords.longitude,
           },
         ]);
-        addIncident(json['classification'], base64)
-        setClassification(json['classification'])
+        addIncident(classif, base64)
+        setClassification(classif)
         Toast.show({
-          text1: capitalizeWords(json['classification']),
+          text1: capitalizeWords(classif),
           type: 'error',
           autoHide: false,
         });
-      } else if (json['classification'] == "safe driving") {
+      } else if (classif == "None") {
         Toast.hide();
       }
     } catch (error) {
@@ -142,12 +132,16 @@ const App = () => {
 
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet'
-      runAtTargetFps(1, () => {
+      runAtTargetFps(2, () => {
         'worklet'
+        let cur = new Date();
         const result = toBase64(frame)
+        let end = new Date();
+        console.log(end - cur);
         if (result[0] != null) {
           console.log(result[0])
-        } else {
+        } else if (result[1] != null) {
+          console.log(`class: ${result[1]}, score: ${result[2]}`)
           processFrameJS(result[1])
         }
       })
@@ -280,6 +274,7 @@ const App = () => {
               preset="cif-352x288"
               frameProcessor={sessionId != null ? frameProcessor : null}
             />
+            {base64 != null && <Image style={styles.imageStyle} resizeMode='contain' source={{uri: `data:image/jpeg;base64,${base64}`}}/>}
           </View>
         }
         <View style={styles.startButton}>
@@ -357,8 +352,18 @@ const styles = StyleSheet.create({
   },
   cameraStyle: {
     position: "absolute",
-    width: 100,
-    height: 75,
+    width: 224,
+    height: 224,
+    bottom: 0,
+    right: 0,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderColor: "white",
+  },
+  imageStyle: {
+    position: "absolute",
+    width: 300,
+    height: 400,
     bottom: 0,
     right: 0,
     borderTopWidth: 4,
