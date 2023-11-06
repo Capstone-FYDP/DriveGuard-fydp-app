@@ -68,7 +68,7 @@ public class MainApplication extends Application implements ReactApplication {
     }
     ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
-    FrameProcessorPluginRegistry.addFrameProcessorPlugin("to_base_64", options -> new DistractedDrivingFrameProcessorPlugin());
+    FrameProcessorPluginRegistry.addFrameProcessorPlugin("to_base_64", options -> new DistractedDrivingFrameProcessorPlugin(this));
   }
 
   @Override
