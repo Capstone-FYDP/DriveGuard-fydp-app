@@ -8,87 +8,100 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.YuvImage;
-import android.media.Image;
+import android.media.ThumbnailUtils;
 import android.util.Base64;
 
 import androidx.camera.core.ImageProxy;
+import androidx.camera.core.internal.utils.ImageUtil;
+
+import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.bridge.WritableNativeArray;
+import com.mrousavy.camera.frameprocessor.Frame;
 import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nullable;
+
+import io.github.crow_misia.libyuv.AbgrBuffer;
+import io.github.crow_misia.libyuv.FilterMode;
+import io.github.crow_misia.libyuv.I420Buffer;
+import io.github.crow_misia.libyuv.Nv21Buffer;
+import io.github.crow_misia.libyuv.RotateMode;
+import io.github.crow_misia.libyuv.ext.ImageProxyExt;
+
 public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin {
   @Override
-  public Object callback(ImageProxy image, Object[] params) {
+  public Object callback(@Nullable Frame frame, @Nullable ReadableNativeMap params) {
     // code goes here
     WritableNativeArray array = new WritableNativeArray();
-    ImageProxy.PlaneProxy[] planes = image.getPlanes();
-    ByteBuffer yBuffer = planes[0].getBuffer();
-    ByteBuffer uBuffer = planes[1].getBuffer();
-    ByteBuffer vBuffer = planes[2].getBuffer();
+    if (frame == null) {
+      array.pushString("Error: Null frame");
+      return array;
+    }
+    ImageProxy image = frame.getImageProxy();
 
-    int ySize = yBuffer.remaining();
-    int uSize = uBuffer.remaining();
-    int vSize = vBuffer.remaining();
+    // Determine which type of YUV_420_888 image this is (I420, NV12, NV21) and handle
+    // the ImageProxy accordingly. Regardless of which type, convert it to NV21.
+    Nv21Buffer nv21Buffer;
+    if (YuvFormatDifferentiator.isI420(image)) {
+      nv21Buffer = Nv21Buffer.Factory.allocate(image.getWidth(), image.getHeight());
+      ImageProxyExt.toI420Buffer(image).convertTo(nv21Buffer);
+    } else if (YuvFormatDifferentiator.isNV12(image)) {
+      nv21Buffer = Nv21Buffer.Factory.allocate(image.getWidth(), image.getHeight());
+      ImageProxyExt.toNv12Buffer(image).convertTo(nv21Buffer);
+    } else if (YuvFormatDifferentiator.isNV21(image)){
+      nv21Buffer = ImageProxyExt.toNv21Buffer(image);
+    } else {
+      array.pushString("Error: Invalid image type");
+      return array;
+    }
 
-    byte[] nv21 = new byte[ySize + uSize + vSize];
-    //U and V are swapped
-    yBuffer.get(nv21, 0, ySize);
-    vBuffer.get(nv21, ySize, vSize);
-    uBuffer.get(nv21, ySize + vSize, uSize);
+    // Rotate image due to android capture orientation
+    int imageRotation = image.getImageInfo().getRotationDegrees();
+    int rotatedWidth = imageRotation % 180 == 0 ? image.getWidth() : image.getHeight();
+    int rotatedHeight = imageRotation % 180 == 0 ? image.getHeight() : image.getWidth();
+    Nv21Buffer nv21BufferRotated = Nv21Buffer.Factory.allocate(rotatedWidth, rotatedHeight);
 
-    YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21, image.getWidth(), image.getHeight(), null);
+    nv21Buffer.rotate(nv21BufferRotated, getRotateMode(image.getImageInfo().getRotationDegrees()));
+
+    // Scale image to required size for ML model
+    final int targetWidth = 224;
+    final int targetHeight = 224;
+    float xScale = (float) targetWidth / rotatedWidth;
+    float yScale = (float) targetHeight / rotatedHeight;
+    float scale = Math.max(xScale, yScale);
+    int scaledWidth = (int)(scale*rotatedWidth);
+    int scaledHeight = (int)(scale*rotatedHeight);
+    Nv21Buffer nv21BufferScaled = Nv21Buffer.Factory.allocate(scaledWidth, scaledHeight);
+
+    nv21BufferRotated.scale(nv21BufferScaled, FilterMode.BILINEAR);
+
+    // Convert to a YUV Image and compress to JPEG
+    YuvImage yuvImage = new YuvImage(nv21BufferScaled.asByteArray(), ImageFormat.NV21, scaledWidth, scaledHeight, null);
     ByteArrayOutputStream out = new ByteArrayOutputStream();
-    yuvImage.compressToJpeg(new Rect(0, 0, yuvImage.getWidth(), yuvImage.getHeight()) , 75, out);
+    yuvImage.compressToJpeg(new Rect((yuvImage.getWidth()/2) - (targetWidth/2), (yuvImage.getHeight()/2) - (targetHeight/2), (yuvImage.getWidth()/2) + (targetWidth/2), (yuvImage.getHeight()/2) + (targetHeight/2)) , 100, out);
 
-    byte[] imageBytes = out.toByteArray();
-    Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+    byte[] byteArray = out.toByteArray();
 
-    //Scale bitmap
-    Bitmap scaledImg = scaleCenterCrop(bitmap, 224, 224);
-
-    //Rotate bitmap
-    Matrix matrix = new Matrix();
-    matrix.postRotate(image.getImageInfo().getRotationDegrees());
-    Bitmap rotatedImg = Bitmap.createBitmap(scaledImg, 0, 0, scaledImg.getWidth(), scaledImg.getHeight(), matrix, true);
-
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    rotatedImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-    byte[] byteArray = byteArrayOutputStream.toByteArray();
-
+    array.pushNull();
     array.pushString(Base64.encodeToString(byteArray, Base64.DEFAULT));
     return array;
   }
 
-  Bitmap scaleCenterCrop(Bitmap source, int newHeight,
-                         int newWidth) {
-    int sourceWidth = source.getWidth();
-    int sourceHeight = source.getHeight();
-
-    float xScale = (float) newWidth / sourceWidth;
-    float yScale = (float) newHeight / sourceHeight;
-    float scale = Math.max(xScale, yScale);
-
-    // Now get the size of the source bitmap when scaled
-    float scaledWidth = scale * sourceWidth;
-    float scaledHeight = scale * sourceHeight;
-
-    float left = (newWidth - scaledWidth) / 2;
-    float top = (newHeight - scaledHeight) / 2;
-
-    RectF targetRect = new RectF(left, top, left + scaledWidth, top
-            + scaledHeight);//from ww w  .j a va 2s. co m
-
-    Bitmap dest = Bitmap.createBitmap(newWidth, newHeight,
-            source.getConfig());
-    Canvas canvas = new Canvas(dest);
-    canvas.drawBitmap(source, null, targetRect, null);
-
-    return dest;
+  RotateMode getRotateMode(int rotationDegrees) {
+    switch(rotationDegrees) {
+      case 90:
+        return RotateMode.ROTATE_90;
+      case 180:
+        return RotateMode.ROTATE_180;
+      case 270:
+        return RotateMode.ROTATE_270;
+      default:
+        return RotateMode.ROTATE_0;
+    }
   }
 
-  public DistractedDrivingFrameProcessorPlugin() {
-    super("toBase64");
-  }
+  public DistractedDrivingFrameProcessorPlugin() {}
 }
