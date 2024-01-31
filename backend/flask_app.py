@@ -274,19 +274,19 @@ def mapDistractions(current_user):
     else:
         return jsonify(message="No Distraction Data")
     
-@app.route('/api/predict', methods = ['POST'])
-@token_required
-def predictImage(current_user):
-    data = request.json
-    image = Image.open(BytesIO(base64.b64decode(data['image'])))
-    model, device = loadModel()
-    out = predict(model, image, device)
-    res = out.split()
+# @app.route('/api/predict', methods = ['POST'])
+# @token_required
+# def predictImage(current_user):
+#     data = request.json
+#     image = Image.open(BytesIO(base64.b64decode(data['image'])))
+#     model, device = loadModel()
+#     out = predict(model, image, device)
+#     res = out.split()
 
-    return jsonify({
-                    "classification": getClassficiations(res[0]),
-                    "confidence": round(float(res[1]), 2)
-                    })
+#     return jsonify({
+#                     "classification": getClassficiations(res[0]),
+#                     "confidence": round(float(res[1]), 2)
+#                     })
 
 @app.route('/api/createSession', methods = ['POST'])
 @token_required
