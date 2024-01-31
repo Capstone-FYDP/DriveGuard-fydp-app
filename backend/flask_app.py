@@ -7,11 +7,6 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from PIL import Image
 from io import BytesIO
 import base64
-
-
-
-from assistaML import predict, loadModel, getClassficiations
-
 import pickle
 import numpy as np
 import json
