@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 
-import com.anonymous.fydpapp.distracteddrivingframeprocessor.DistractedDrivingFrameProcessorPluginPackage;
+import com.anonymous.fydpapp.distracteddrivingframeprocessor.DistractedDrivingFrameProcessorPlugin;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
@@ -12,6 +12,8 @@ import com.facebook.react.ReactPackage;
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactNativeHost;
 import com.facebook.soloader.SoLoader;
+import com.mrousavy.camera.CameraPackage;
+import com.mrousavy.camera.frameprocessor.FrameProcessorPluginRegistry;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
@@ -32,7 +34,6 @@ public class MainApplication extends Application implements ReactApplication {
         @SuppressWarnings("UnnecessaryLocalVariable")
         List<ReactPackage> packages = new PackageList(this).getPackages();
         // Packages that cannot be autolinked yet can be added manually here, for example:
-        packages.add(new DistractedDrivingFrameProcessorPluginPackage());
         return packages;
       }
 
@@ -67,6 +68,7 @@ public class MainApplication extends Application implements ReactApplication {
     }
     ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
+    FrameProcessorPluginRegistry.addFrameProcessorPlugin("to_base_64", options -> new DistractedDrivingFrameProcessorPlugin(this));
   }
 
   @Override
