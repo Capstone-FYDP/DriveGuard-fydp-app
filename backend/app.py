@@ -7,11 +7,6 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from PIL import Image
 from io import BytesIO
 import base64
-
-
-
-from assistaML import predict, loadModel, getClassficiations
-
 import pickle
 import numpy as np
 import json
@@ -279,19 +274,19 @@ def mapDistractions(current_user):
     else:
         return jsonify(message="No Distraction Data")
     
-@app.route('/api/predict', methods = ['POST'])
-@token_required
-def predictImage(current_user):
-    data = request.json
-    image = Image.open(BytesIO(base64.b64decode(data['image'])))
-    model, device = loadModel()
-    out = predict(model, image, device)
-    res = out.split()
+# @app.route('/api/predict', methods = ['POST'])
+# @token_required
+# def predictImage(current_user):
+#     data = request.json
+#     image = Image.open(BytesIO(base64.b64decode(data['image'])))
+#     model, device = loadModel()
+#     out = predict(model, image, device)
+#     res = out.split()
 
-    return jsonify({
-                    "classification": getClassficiations(res[0]),
-                    "confidence": round(float(res[1]), 2)
-                    })
+#     return jsonify({
+#                     "classification": getClassficiations(res[0]),
+#                     "confidence": round(float(res[1]), 2)
+#                     })
 
 @app.route('/api/createSession', methods = ['POST'])
 @token_required
