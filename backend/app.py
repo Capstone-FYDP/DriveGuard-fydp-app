@@ -17,6 +17,7 @@ import jwt
 from functools import wraps
 import re 
 import datetime
+from google.cloud import storage
 
 app = Flask(__name__)
 CORS(app)
@@ -223,9 +224,25 @@ def getIncident(current_user, sessionId):
 @app.route('/api/addIncident', methods = ["POST"])
 @token_required
 def addIncident(current_user):
+    storage_client = storage.Client(project='fydp-project-393020')
+  
     json_data = request.get_json()
     now = datetime.datetime.now()
+    BUCKET = 'driver_aid_image_bucket'
+    bucket = storage_client.get_bucket(BUCKET)
 
+    # Decode base64 string
+    image_data = base64.b64decode(json_data['image'])
+
+    # Upload image data to GCS
+        
+    file_name = current_user.public_id + now.strftime("%Y-%m-%d %H:%M:%S")
+    blob = bucket.blob(file_name)
+    blob.upload_from_string(image_data, content_type='image/jpeg')  # Adjust content_type as needed
+
+    # Return public URL of the uploaded image
+    file_uri = f"gs://{BUCKET}/{file_name}"
+   
     user_data={}
     user_data['public_id']=current_user.public_id
 
@@ -233,7 +250,7 @@ def addIncident(current_user):
     user_id=user_data['public_id'],
     date = now.isoformat(),
     classification = json_data['classification'],
-    image_b64 = json_data['image'],
+    image_b64 = file_uri,
     session_id = json_data['session_id'])
 
     db.session.add(newTrackData)
