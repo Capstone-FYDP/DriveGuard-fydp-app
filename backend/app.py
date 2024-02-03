@@ -85,6 +85,8 @@ class Incidents(db.Model):
     classification = Column(String(50))
     image_b64 = Column(String)
     session_id = Column(String)
+    long = Column(String)
+    lat = Column(String)
 
 class Session(db.Model):
     id = Column(Integer, primary_key=True)
@@ -191,6 +193,8 @@ def getIncidents(current_user):
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
             incidentData['uri'] = data.image_b64
+            incidentData['long'] = data.long
+            incidentData['lat'] = data.lat
            
             output.append(incidentData)
         return jsonify(incidentData = output)
@@ -215,6 +219,8 @@ def getIncident(current_user, sessionId):
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
             incidentData['uri'] = data.image_b64
+            incidentData['long'] = data.long
+            incidentData['lat'] = data.lat
            
             output.append(incidentData)
         return jsonify(incidentData = output)
@@ -251,14 +257,14 @@ def addIncident(current_user):
     date = now.isoformat(),
     classification = json_data['classification'],
     image_b64 = file_uri,
-    session_id = json_data['session_id'])
+    session_id = json_data['session_id'],
+    long = json_data['long'],
+    lat = json_data['lat'])
 
     db.session.add(newTrackData)
     db.session.commit()
 
     return jsonify(message="Added Incident"),201
-
-    
 
 @app.route('/api/totaldistractions', methods=['GET'])
 @token_required
