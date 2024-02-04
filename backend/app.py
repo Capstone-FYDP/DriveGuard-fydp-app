@@ -414,7 +414,7 @@ def deployServer():
             abort(abort_code)
         
         if payload['ref'] != 'refs/heads/main':
-            return json.dumps({'msg': 'Not main; ignoring'})
+            return ''
 
         repo = git.Repo('./fydp-app/backend')
         origin = repo.remotes.origin
