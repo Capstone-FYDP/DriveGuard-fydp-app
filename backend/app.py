@@ -10,6 +10,7 @@ import base64
 import pickle
 import numpy as np
 import json
+import git
 import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -383,6 +384,47 @@ def viewSession(current_user, sessionId):
         return jsonify(userSession = sessionData)
     else:
         return jsonify(message= "Not a valid session")
+
+@app.route('/deploy_server', methods=['POST'])
+def deployServer():
+    if request.method != 'POST':
+        return 'OK'
+    else:
+        abort_code = 418
+        if 'X-Github-Event' not in request.headers:
+            abort(abort_code)
+        if 'X-Github-Delivery' not in request.headers:
+            abort(abort_code)
+        if not request.is_json:
+            abort(abort_code)
+        if 'User-Agent' not in request.headers:
+            abort(abort_code)
+        ua = request.headers.get('User-Agent')
+        if not ua.startswith('GitHub-Hookshot/'):
+            abort(abort_code)
+
+        event = request.headers.get('X-GitHub-Event')
+        if event != "push":
+            return json.dumps({'msg': "Wrong event type"})
+        
+        payload = request.get_json()
+        if payload is None:
+            print('Deploy payload is empty: {payload}'.format(
+                payload=payload))
+            abort(abort_code)
+        
+        if payload['ref'] != 'refs/heads/main':
+            return json.dumps({'msg': 'Not main; ignoring'})
+
+        repo = git.Repo('./fydp-app/backend')
+        origin = repo.remotes.origin
+        repo.create_head('main', origin.refs.main).set_tracking_branch(origin.refs.main).checkout()
+        origin.pull()
+
+        commit_hash = pull_info[0].commit.hexsha
+        build_commit = f'build_commit = "{commit_hash}"'
+        print(f'{build_commit}')
+        return 'Updated server to commit {commit}'.format(commit=commit_hash)
 
 if __name__ == '__main__':
     app.run(debug=True)
