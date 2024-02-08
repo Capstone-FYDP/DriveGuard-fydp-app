@@ -17,9 +17,10 @@ import jwt
 from functools import wraps
 import re 
 import datetime
-from google.cloud import storage
+import boto3
 
 app = Flask(__name__)
+s3 = boto3.client('s3')
 CORS(app)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -83,7 +84,7 @@ class Incidents(db.Model):
     user_id=Column(String(50), unique=False)
     date = Column(String(50))
     classification = Column(String(50))
-    image_b64 = Column(String)
+    image_url = Column(String)
     session_id = Column(String)
     long = Column(String)
     lat = Column(String)
@@ -96,7 +97,7 @@ class Session(db.Model):
     endDate = Column(String(50))
     status = Column(String(50))
     numOfIncidents = Column(Integer)
-    image_b64 = Column(String)
+    image_url  = Column(String)
 
     
 @app.route("/api/validateToken", methods=['GET'])
@@ -168,7 +169,7 @@ def analysis(current_user):
     user_id=user_data['public_id'],
     date = now.isoformat(),
     classification = json_data['classification'],
-    image_b64 = json_data['image_b64'],
+    image_url = json_data['image_url'],
     session_id = json_data['session_id'])
 
     db.session.add(newTrackData)
@@ -192,7 +193,7 @@ def getIncidents(current_user):
             incidentData['user_id'] = data.user_id
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
-            incidentData['uri'] = data.image_b64
+            incidentData['uri'] = data.image_url
             incidentData['long'] = data.long
             incidentData['lat'] = data.lat
            
@@ -218,7 +219,7 @@ def getIncident(current_user, sessionId):
             incidentData['user_id'] = data.user_id
             incidentData['date'] = data.date
             incidentData['classification'] = data.classification
-            incidentData['uri'] = data.image_b64
+            incidentData['uri'] = data.image_url
             incidentData['long'] = data.long
             incidentData['lat'] = data.lat
            
@@ -230,25 +231,25 @@ def getIncident(current_user, sessionId):
 @app.route('/api/addIncident', methods = ["POST"])
 @token_required
 def addIncident(current_user):
-    storage_client = storage.Client(project='fydp-project-393020')
+    
+    # storage_client = storage.Client(project='fydp-project-393020')
   
     json_data = request.get_json()
     now = datetime.datetime.now()
-    BUCKET = 'driver_aid_image_bucket'
-    bucket = storage_client.get_bucket(BUCKET)
-
-    # Decode base64 string
+    BUCKET = 'driveraid'
+    # Decode base64 strin
     image_data = base64.b64decode(json_data['image'])
 
-    # Upload image data to GCS
-        
-    file_name = current_user.public_id + now.strftime("%Y-%m-%d %H:%M:%S")
-    blob = bucket.blob(file_name)
-    blob.upload_from_string(image_data, content_type='image/jpeg')  # Adjust content_type as needed
+    # Generate a unique file name based on current timestamp
+    now = datetime.datetime.now()
+    file_name = 'images/'+ current_user.public_id + now.strftime("%Y-%m-%d %H:%M:%S") + ".jpg"
+
+    # Upload image data to S3
+    s3.put_object(Bucket=BUCKET, Key=file_name, Body=image_data, ContentType='image/jpeg', ACL='public-read')
 
     # Return public URL of the uploaded image
-    file_uri = f"gs://{BUCKET}/{file_name}"
-   
+    file_url = f"https://{BUCKET}.s3.amazonaws.com/{file_name}"
+    
     user_data={}
     user_data['public_id']=current_user.public_id
 
@@ -256,7 +257,7 @@ def addIncident(current_user):
     user_id=user_data['public_id'],
     date = now.isoformat(),
     classification = json_data['classification'],
-    image_b64 = file_uri,
+    image_url = file_url,
     session_id = json_data['session_id'],
     long = json_data['long'],
     lat = json_data['lat'])
@@ -327,7 +328,7 @@ def createSession(current_user):
     startDate = now.isoformat(),
     endDate = "n/a",
     status = "ACTIVE",
-    image_b64 = data['image'],
+    image_url  = data['image'],
     numOfIncidents=0)
 
     db.session.add(newSession)
@@ -378,7 +379,7 @@ def getSession(current_user):
             sessionData['endDate'] = data.endDate
             sessionData['status'] = data.status
             sessionData['numOfIncidents'] = data.numOfIncidents
-            sessionData['image_b64']= data.image_b64
+            sessionData['image_url']= data.image_url 
 
             output.append(sessionData)
         return jsonify(sessionData = output)
@@ -401,7 +402,7 @@ def viewSession(current_user, sessionId):
         sessionData['endDate'] = userSession.endDate
         sessionData['status'] = userSession.status
         sessionData['numOfIncidents'] = userSession.numOfIncidents
-        sessionData['image_b64']= userSession.image_b64
+        sessionData['image_url ']= userSession.image_url 
         
         return jsonify(userSession = sessionData)
     else:
