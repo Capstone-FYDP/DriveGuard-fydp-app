@@ -105,7 +105,7 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     array.pushNull();
     if (classificationsList.size() > 0 && classificationsList.get(0).getCategories().size() > 0) {
       Category classification = classificationsList.get(0).getCategories().get(0);
-      array.pushString(classification.getDisplayName());
+      array.pushString(classification.getLabel());
       array.pushDouble(classification.getScore());
     } else {
       array.pushNull();
@@ -150,7 +150,7 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
                               .build();
               try {
                 imageClassifier = ImageClassifier.createFromFileAndOptions(
-                        context, "lite-model_aiy_vision_classifier_birds_V1_3.tflite", options);
+                        context, "drive_guard_model_int8.tflite", options);
               } catch (IOException e) {
                 Log.e("DistractedDriving", String.format("Error creating image classifier: %s", e.getMessage()));
               }
