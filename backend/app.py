@@ -99,7 +99,7 @@ class Session(db.Model):
     
 @app.route('/')
 def main_page():
-    return 'DriveGuard Server Running'
+    return 'DriveGuard Server Running!'
 
 @app.route("/api/validateToken", methods=['GET'])
 def validateToken():
