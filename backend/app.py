@@ -420,7 +420,7 @@ def deployServer():
         if payload['ref'] != 'refs/heads/main':
             return json.dumps({'msg': 'Not main; ignoring'})
 
-        repo = git.Repo('./fydp-app/backend')
+        repo = git.Repo('./fydp-app')
         origin = repo.remotes.origin
         repo.create_head('main', origin.refs.main).set_tracking_branch(origin.refs.main).checkout()
         origin.pull()
