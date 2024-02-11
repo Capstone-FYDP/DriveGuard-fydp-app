@@ -96,6 +96,10 @@ class Session(db.Model):
     image_b64 = Column(String)
 
     
+@app.route('/')
+def main_page():
+    return 'DriveGuard Server Running'
+
 @app.route("/api/validateToken", methods=['GET'])
 def validateToken():
     if not request.headers.get('x-access-tokens'):
