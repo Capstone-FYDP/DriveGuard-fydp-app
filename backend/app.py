@@ -423,7 +423,7 @@ def deployServer():
         repo = git.Repo('./fydp-app')
         origin = repo.remotes.origin
         repo.create_head('main', origin.refs.main).set_tracking_branch(origin.refs.main).checkout()
-        origin.pull()
+        pull_info = origin.pull()
 
         commit_hash = pull_info[0].commit.hexsha
         build_commit = f'build_commit = "{commit_hash}"'
