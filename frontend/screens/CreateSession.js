@@ -14,7 +14,7 @@ import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import IconBadge from '../components/iconBadge/custom-iconBadge';
 import { capitalize } from 'validate.js';
-import { capitalizeWords } from '../utils/string-utils';
+import { mapClassToLabel } from '../utils/string-utils';
 
 const App = () => {
   const context = useContext(MainContext);
@@ -105,6 +105,7 @@ const App = () => {
 
   const processFrame = async (classif) => {
     //setBase64(base64)
+    classif = mapClassToLabel(classif)
     try {
       if (classif != "None" && classif != classRef.current) {
         setIncidentCoordinates([
@@ -117,7 +118,7 @@ const App = () => {
         addIncident(classif, base64)
         setClassification(classif)
         Toast.show({
-          text1: capitalizeWords(classif),
+          text1: classif,
           type: 'error',
           autoHide: false,
         });

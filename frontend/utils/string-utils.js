@@ -13,6 +13,19 @@ const months = [
   'December',
 ];
 
+const classToLabel = {
+  'c0': 'Safe driving', 
+  'c1': 'Texting - Right', 
+  'c2': 'Talking on the phone - Right', 
+  'c3': 'Texting - Left', 
+  'c4': 'Talking on the phone - Left', 
+  'c5': 'Operating the radio', 
+  'c6': 'Drinking', 
+  'c7': 'Reaching behind', 
+  'c8': 'Hair and makeup', 
+  'c9': 'Talking to passenger' 
+}
+
 export const pluralize = (text, count, suffix = 's') => {
   if (count === 1) {
     return text;
@@ -46,4 +59,8 @@ export const capitalizeWords = (phrase) => {
 
   return words.join(" ")
   
-}
+};
+
+export const mapClassToLabel = (classif) => {
+  return classToLabel[classif]
+};
