@@ -1,16 +1,27 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, FlatList } from "react-native";
+import { StyleSheet, Text, View, FlatList, ScrollView } from "react-native";
 import CustomCard from "../components/card/custom-card";
 import { MainContext } from "../context/MainContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
+import { LineChart, BarChart } from "react-native-chart-kit";
+import { Dimensions } from "react-native";
 
 const Home = () => {
   const context = useContext(MainContext);
   const [total, setTotal] = useState();
   const [isLoading, setLoading] = useState(true);
   const [classData, setClassData] = useState([]);
+  const screenWidth = Dimensions.get("window").width;
+  const chartConfig = {
+    backgroundGradientFrom: "#ebf5fc",
+    backgroundGradientTo: "#ebf5fc",
+    color: (opacity = 1) => `rgba(44, 121, 179, 1)`,
+    labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+    strokeWidth: 2, // optional, default 3
+    barPercentage: 0.5,
+  };
 
   const DashboardCard = ({ item }) => {
     return (
@@ -109,39 +120,109 @@ const Home = () => {
           <Text
             style={[styles.headerTitle, { color: context.secondaryColour }]}
           >
-            My Driving Score
+            Driving Stats
           </Text>
         </View>
       </View>
-      {isLoading ? (
-        <LoadingIndicator isAnimating={true} />
-      ) : (
-        <FlatList
-          ListHeaderComponent={
-            <CustomCard
-              outerStyle={[
-                styles.infoCardOuter,
-                styles.firstCard,
-                { backgroundColor: context.primaryColour },
-              ]}
-              innerStyle={styles.infoCardInner}
-            >
-              <View style={styles.firstCardTextContainer}>
-                <Text style={[styles.title, styles.firstCardTitle]}>
-                  Total Distractions
-                </Text>
-                <Text style={[styles.number, styles.firstCardNumber]}>
-                  {total}
-                </Text>
-              </View>
-            </CustomCard>
-          }
-          numColumns={2}
-          columnWrapperStyle={styles.flatListContainer}
-          data={Object.keys(classData)}
-          renderItem={DashboardCard}
-        />
-      )}
+      <ScrollView>
+        <View style={styles.graphContainer}>
+          <LineChart
+            data={{
+              labels: ["Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"],
+              datasets: [
+                {
+                  data: [
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                  ],
+                },
+              ],
+            }}
+            width={screenWidth * 0.85}
+            height={220}
+            yAxisInterval={1} // optional, defaults to 1
+            chartConfig={{
+              backgroundGradientFrom: context.backgroundColor,
+              backgroundGradientTo: context.backgroundColor,
+              color: (opacity = 1) => `rgba(44, 121, 179, 1)`,
+              labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForDots: {
+                r: "0",
+                strokeWidth: "1",
+                stroke: context.primaryColour,
+              },
+            }}
+            bezier
+            style={{
+              borderRadius: 20,
+              marginBottom: 20,
+            }}
+          />
+          {/* <BarChart
+            data={{
+              labels: ["Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"],
+              datasets: [
+                {
+                  data: [
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                    Math.random() * 100,
+                  ],
+                },
+              ],
+            }}
+            width={screenWidth * 0.85}
+            height={220}
+            chartConfig={chartConfig}
+            verticalLabelRotation={30}
+            style={{
+              borderRadius: 20,
+            }}
+          /> */}
+        </View>
+
+        {isLoading ? (
+          <LoadingIndicator isAnimating={true} />
+        ) : (
+          <FlatList
+            ListHeaderComponent={
+              <CustomCard
+                outerStyle={[
+                  styles.infoCardOuter,
+                  styles.firstCard,
+                  { backgroundColor: context.primaryColour },
+                ]}
+                innerStyle={styles.infoCardInner}
+              >
+                <View style={styles.firstCardTextContainer}>
+                  <Text style={[styles.title, styles.firstCardTitle]}>
+                    Total Distractions
+                  </Text>
+                  <Text style={[styles.number, styles.firstCardNumber]}>
+                    {total}
+                  </Text>
+                </View>
+              </CustomCard>
+            }
+            numColumns={2}
+            columnWrapperStyle={styles.flatListContainer}
+            data={Object.keys(classData)}
+            renderItem={DashboardCard}
+          />
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -168,6 +249,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 30,
     fontWeight: "600",
+  },
+  graphContainer: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   flatListContainer: {
     width: "85%",

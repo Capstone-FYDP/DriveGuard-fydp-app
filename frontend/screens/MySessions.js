@@ -52,10 +52,10 @@ const MySessions = ({ navigation }) => {
             })
             .sort((a, b) => {
               // Put whatevers active at the top first
-              if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
-              if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+              if (a.status == "ACTIVE" && b.status != "ACTIVE") return 1;
+              if (a.status != "ACTIVE" && b.status == "ACTIVE") return -1;
               // Sort in descending order from latest to oldest
-              if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+              if (a.status == "ACTIVE" && b.status == "ACTIVE")
                 return a.startDate - b.startDate;
               return a.endDate - b.endDate;
             })
@@ -104,7 +104,7 @@ const MySessions = ({ navigation }) => {
       ) : (
         <View style={styles.flatListContainer}>
           <FlatList
-            data={sessions.reverse()}
+            data={sessions}
             renderItem={({ item }) => {
               return (
                 <>
@@ -112,7 +112,7 @@ const MySessions = ({ navigation }) => {
                     imageUrl={item.image_url}
                     startDate={item.startDate}
                     duration={
-                      item.status == 'COMPLETED'
+                      item.status == "COMPLETED"
                         ? getTimeDuration(item.startDate, item.endDate)
                         : []
                     }
