@@ -148,7 +148,7 @@ const Home = () => {
           <Text
             style={[styles.headerTitle, { color: context.secondaryColour }]}
           >
-            Overview
+            Dashboard
           </Text>
         </View>
       </View>
@@ -156,8 +156,11 @@ const Home = () => {
       {isLoading ? (
         <LoadingIndicator isAnimating={true} />
       ) : (
-        <ScrollView>
+        <>
           <View style={styles.graphContainer}>
+            <Text style={[styles.graphTitle, { color: context.primaryColour }]}>
+              {`Your last ${pastDays} trips`}
+            </Text>
             <LineChart
               data={{
                 datasets: [
@@ -180,12 +183,8 @@ const Home = () => {
                   strokeWidth: "1",
                   stroke: context.tertiaryColour,
                 },
-                withHorizontalLabels: false,
               }}
               bezier
-              style={{
-                borderRadius: 20,
-              }}
               segments={4}
               fromZero
             />
@@ -216,7 +215,7 @@ const Home = () => {
             renderItem={DashboardCard}
             nestedScrollEnabled
           />
-        </ScrollView>
+        </>
       )}
     </View>
   );
@@ -248,8 +247,14 @@ const styles = StyleSheet.create({
   graphContainer: {
     width: "100%",
     display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  graphTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 40,
+    marginBottom: 15,
   },
   flatListContainer: {
     width: "85%",
