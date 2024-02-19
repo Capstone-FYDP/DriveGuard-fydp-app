@@ -5,7 +5,7 @@ import { MainContext } from "../context/MainContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
-import { LineChart, BarChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 
 const Home = () => {
@@ -13,15 +13,9 @@ const Home = () => {
   const [total, setTotal] = useState();
   const [isLoading, setLoading] = useState(true);
   const [classData, setClassData] = useState([]);
+  const [graphData, setGraphData] = useState([]);
   const screenWidth = Dimensions.get("window").width;
-  const chartConfig = {
-    backgroundGradientFrom: "#ebf5fc",
-    backgroundGradientTo: "#ebf5fc",
-    color: (opacity = 1) => `rgba(44, 121, 179, 1)`,
-    labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
-    strokeWidth: 2, // optional, default 3
-    barPercentage: 0.5,
-  };
+  const pastDays = 10;
 
   const DashboardCard = ({ item }) => {
     return (
@@ -48,6 +42,39 @@ const Home = () => {
       return await AsyncStorage.getItem("auth_token");
     } catch (e) {
       console.log(e);
+    }
+  };
+
+  const getSessions = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/getSessions`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-tokens": token,
+        },
+      });
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: "Error",
+          text2: json.message,
+          type: "error",
+        });
+      } else {
+        //get the most recent sessions
+        const pastSessions = json.sessionData
+          .map((item) => {
+            return item.numOfIncidents;
+          })
+          .slice(0, pastDays);
+
+        setGraphData(pastSessions);
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -104,6 +131,7 @@ const Home = () => {
   };
 
   useEffect(() => {
+    getSessions();
     getTotalDistractions();
     getClassificationData();
   }, []);
@@ -120,82 +148,48 @@ const Home = () => {
           <Text
             style={[styles.headerTitle, { color: context.secondaryColour }]}
           >
-            Driving Stats
+            Overview
           </Text>
         </View>
       </View>
-      <ScrollView>
-        <View style={styles.graphContainer}>
-          <LineChart
-            data={{
-              labels: ["Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"],
-              datasets: [
-                {
-                  data: [
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                  ],
-                },
-              ],
-            }}
-            width={screenWidth * 0.85}
-            height={220}
-            yAxisInterval={1} // optional, defaults to 1
-            chartConfig={{
-              backgroundGradientFrom: context.backgroundColor,
-              backgroundGradientTo: context.backgroundColor,
-              color: (opacity = 1) => `rgba(44, 121, 179, 1)`,
-              labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "0",
-                strokeWidth: "1",
-                stroke: context.primaryColour,
-              },
-            }}
-            bezier
-            style={{
-              borderRadius: 20,
-              marginBottom: 20,
-            }}
-          />
-          {/* <BarChart
-            data={{
-              labels: ["Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"],
-              datasets: [
-                {
-                  data: [
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                    Math.random() * 100,
-                  ],
-                },
-              ],
-            }}
-            width={screenWidth * 0.85}
-            height={220}
-            chartConfig={chartConfig}
-            verticalLabelRotation={30}
-            style={{
-              borderRadius: 20,
-            }}
-          /> */}
-        </View>
 
-        {isLoading ? (
-          <LoadingIndicator isAnimating={true} />
-        ) : (
+      {isLoading ? (
+        <LoadingIndicator isAnimating={true} />
+      ) : (
+        <ScrollView>
+          <View style={styles.graphContainer}>
+            <LineChart
+              data={{
+                datasets: [
+                  {
+                    data: graphData,
+                  },
+                ],
+              }}
+              width={screenWidth * 0.9}
+              height={220}
+              yAxisInterval={10}
+              chartConfig={{
+                backgroundGradientFrom: context.screenBackground,
+                backgroundGradientTo: context.screenBackground,
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
+                labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+                propsForDots: {
+                  r: "0",
+                  strokeWidth: "1",
+                  stroke: context.tertiaryColour,
+                },
+                withHorizontalLabels: false,
+              }}
+              bezier
+              style={{
+                borderRadius: 20,
+              }}
+              segments={4}
+              fromZero
+            />
+          </View>
           <FlatList
             ListHeaderComponent={
               <CustomCard
@@ -220,9 +214,10 @@ const Home = () => {
             columnWrapperStyle={styles.flatListContainer}
             data={Object.keys(classData)}
             renderItem={DashboardCard}
+            nestedScrollEnabled
           />
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -237,7 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     paddingTop: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
   },
   textWrapper: {
     width: "85%",
@@ -255,8 +250,6 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 10,
   },
   flatListContainer: {
     width: "85%",
