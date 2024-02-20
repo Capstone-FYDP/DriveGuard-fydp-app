@@ -15,14 +15,15 @@ import * as Location from "expo-location";
 import IconBadge from '../components/iconBadge/custom-iconBadge';
 import { capitalize } from 'validate.js';
 import { mapClassToLabel } from '../utils/string-utils';
+import MapboxNavigation from 'rnc-mapbox-nav';
 
 const App = () => {
   const context = useContext(MainContext);
-  const [button, setButton] = useState('play');
+  //const [button, setButton] = useState('play');
   const [sessionId, setSessionId] = useState(null);
   const sessionIdRef = useRef(sessionId)
   sessionIdRef.current = sessionId
-  const [buttonLoading, setButtonLoading] = useState(false);
+  //const [buttonLoading, setButtonLoading] = useState(false);
   const [hasCameraPermissions, setHasCameraPermissions] = useState(false);
   const [classification, setClassification] = useState("")
   const classRef = useRef(classification)
@@ -35,7 +36,8 @@ const App = () => {
   const [incidentCoordinates, setIncidentCoordinates] = useState([]);
   const incidentCoordinatesRef = useRef(incidentCoordinates);
   incidentCoordinatesRef.current = incidentCoordinates;
-  const [location, setLocation] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [destination, setDestination] = useState(null)
   const locationRef = useRef(location);
   locationRef.current = location;
 
@@ -60,6 +62,7 @@ const App = () => {
         }
       }
       if (cameraStatus == 'authorized') {
+        console.log("camera permission true");
         setHasCameraPermissions(true)
       }
 
@@ -70,28 +73,21 @@ const App = () => {
           text2: "Permission to access location was denied",
           type: 'error',
         });
-      } else {
-        const locationSubscription = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            timeInterval: 1000,
-            distanceInterval: 1,
-          },
-          (location) => {
-            setLocation(location);
-            if (sessionIdRef.current != null) {
-              setRouteCoordinates([
-                ...routeCoordinatesRef.current,
-                {
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude,
-                },
-              ]);
-            }
-          }
-        );
       }
-      return () => locationSubscription.remove();
+      console.log(status)
+      if (status == 'granted') {
+        // console.log("Start Location")
+        let location = await Location.getCurrentPositionAsync({});
+        // console.log("End Location")
+
+        setLocation([location.coords.longitude, location.coords.latitude]);
+        console.log(location)
+        let dest = await Location.geocodeAsync('208 sunview');
+        setDestination([dest[0].longitude, dest[0].latitude]);
+        console.log(dest)
+        
+        createSession();
+      }
     })();
   }, []);
 
@@ -103,26 +99,28 @@ const App = () => {
     }
   };
 
-  const processFrame = async (classif) => {
+  const processFrame = async (classif, base64) => {
     //setBase64(base64)
     classif = mapClassToLabel(classif)
     try {
-      if (classif != "None" && classif != classRef.current) {
+      if (classif != "Safe driving" && classif != classRef.current) {
         setIncidentCoordinates([
           ...incidentCoordinatesRef.current,
           {
-            latitude: locationRef.current.coords.latitude,
-            longitude: locationRef.current.coords.longitude,
+            latitude: locationRef.current[1],
+            longitude: locationRef.current[0],
           },
         ]);
         addIncident(classif, base64)
         setClassification(classif)
+        // Add an audio alert here
         Toast.show({
           text1: classif,
           type: 'error',
           autoHide: false,
         });
-      } else if (classif == "None") {
+        ///////////////////////////
+      } else if (classif == "Safe driving") {
         Toast.hide();
       }
     } catch (error) {
@@ -138,15 +136,15 @@ const App = () => {
         let cur = new Date();
         const result = toBase64(frame)
         let end = new Date();
-        console.log(end - cur);
+        console.log(`Image Processor and Classifier RTT: ${end - cur}ms`);
         if (result[0] != null) {
           console.log(result[0])
         } else if (result[1] != null) {
           console.log(`class: ${result[1]}, score: ${result[2]}`)
-          processFrameJS(result[1])
+          processFrameJS(result[1], result[3])
         }
       })
-  }, [])
+  }, [processFrameJS])
 
   const addIncident = async (classification, base64) => {
     try {
@@ -161,6 +159,8 @@ const App = () => {
           "classification": classification,
           "image": base64,
           "session_id": sessionIdRef.current,
+          "long": locationRef.current[0],
+          "lat": locationRef.current[1],
         })
       });
     } catch (error) {
@@ -169,7 +169,6 @@ const App = () => {
   }
 
   const createSession = async () => {
-    setButtonLoading(true);
     setIncidentCoordinates([]);
     setRouteCoordinates([]);
     //TODO: need to pass the image url for the request body
@@ -188,19 +187,16 @@ const App = () => {
       });
 
       const json = await response.json();
+      console.log("set session: " + json.message)
       setSessionId(json.message);
-      setButton("stop")
-      setButtonLoading(false);
 
     } catch (error) {
       console.error(error);
-      setButtonLoading(false);
     }
   };
 
   const endSession = async () => {
     Toast.hide()
-    setButtonLoading(true);
     try {
       const token = await getToken();
 
@@ -227,43 +223,68 @@ const App = () => {
       } else {
         setSessionId(null)
       }
-
-      setButton("play")
-      setButtonLoading(false);
     } catch (error) {
       console.error(error);
-      setButtonLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.createContainer}>
-        <MapView
-          style={styles.mapStyle}
-          provider={PROVIDER_GOOGLE}
-          region={{
-            latitude: 43.4729452,
-            longitude: -80.5321545,
-            latitudeDelta: 0.009,
-            longitudeDelta: 0.009,
-          }}
-          showsUserLocation
-          followsUserLocation
-          loadingEnabled
-        >
-          {
-            incidentCoordinates.map( coordinates => {
-              return <Marker
-                coordinate={{
-                  latitude: coordinates.latitude,
-                  longitude: coordinates.longitude,
-                }}
-                pinColor="red"
-              />
-            })
-          }
-          <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor={context.primaryColour}/>
-        </MapView>
+        {isFocused && location && destination &&
+          (
+            <MapboxNavigation
+              origin={location}
+              destination={destination}
+              style={styles.mapStyle}
+              showsEndOfRouteFeedback
+              hideStatusView
+              onLocationChange={(event) => {
+                const { latitude, longitude } = event.nativeEvent;
+                // console.log('onLocationChange', event.nativeEvent);
+                setLocation([longitude, latitude])
+                setRouteCoordinates([
+                  ...routeCoordinates,
+                  {
+                    latitude: latitude,
+                    longitude: longitude,
+                  }
+                ])
+              }}
+              onRouteProgressChange={(event) => {
+                const {
+                  distanceTraveled,
+                  durationRemaining,
+                  fractionTraveled,
+                  distanceRemaining,
+                } = event.nativeEvent;
+                // console.log('onRouteProgressChange', event.nativeEvent);
+              }}
+              onError={(event) => {
+                const { message } = event.nativeEvent;
+                if (sessionId != null) {
+                  endSession();
+                }
+                alert(message);
+              }}
+              onCancelNavigation={() => {
+                // User tapped the "X" cancel button in the nav UI
+                // or canceled via the OS system tray on android.
+                // Do whatever you need to here.
+                if (sessionId != null) {
+                  endSession();
+                }
+                alert('Cancelled navigation event');
+              }}
+              onArrive={() => {
+                // Called when you arrive at the destination.
+                if (sessionId != null) {
+                  endSession();
+                }
+                alert('You have reached your destination');
+              }}
+            />
+          )
+        }
         {isFocused && (device != null) && hasCameraPermissions &&
           <View style={styles.cameraStyle}>
             <Camera 
@@ -275,48 +296,23 @@ const App = () => {
               preset="cif-352x288"
               frameProcessor={sessionId != null ? frameProcessor : null}
             />
-            {base64 != null && <Image style={styles.imageStyle} resizeMode='contain' source={{uri: `data:image/jpeg;base64,${base64}`}}/>}
           </View>
         }
-        <View style={styles.startButton}>
-          <View style={styles.semiCircleWrapper}>
-            <View style={[styles.semiCircle, {backgroundColor: context.primaryColour}]} />
-          </View>
-          <View style={[styles.rectangle, {backgroundColor: context.primaryColour}]}>
-          {buttonLoading ? (
-                <LoadingIndicator color={'white'} isAnimating={true} />
-                ) : (
-                  <IconBadge 
-                    color = {"white"}
-                    onPress={button == "play" ? createSession : endSession}
-                    library="FontAwesome"
-                    icon={button}
-                    size={30}
-                  />
-            )}
-          </View>
-          </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   createContainer: {
-    position: "absolute",
-    bottom: 0,
-    top: 0,
-    right: 0,
-    left: 0,
     flex: 1,
-    alignItems: "center",
-    backgroundColor: '#fffbf6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mapStyle: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    position: 'absolute',
+    zIndex: 150,
+    width: '100%',
+    height: '100%'
   },
   hud: {
     bottom: 0,
@@ -353,13 +349,11 @@ const styles = StyleSheet.create({
   },
   cameraStyle: {
     position: "absolute",
-    width: 224,
-    height: 224,
+    width: 5,
+    height: 5,
     bottom: 0,
     right: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: "white",
+    zIndex: 100,
   },
   imageStyle: {
     position: "absolute",

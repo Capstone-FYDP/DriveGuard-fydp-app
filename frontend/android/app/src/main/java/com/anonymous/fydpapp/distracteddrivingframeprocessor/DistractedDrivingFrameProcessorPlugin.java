@@ -2,6 +2,7 @@ package com.anonymous.fydpapp.distracteddrivingframeprocessor;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -21,6 +22,7 @@ import org.tensorflow.lite.task.gms.vision.TfLiteVision;
 import org.tensorflow.lite.task.gms.vision.classifier.Classifications;
 import org.tensorflow.lite.task.gms.vision.classifier.ImageClassifier;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -100,16 +102,23 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
 //        Log.d("DistractedDriving", String.format("class: %s, score: %f", category.getDisplayName(), category.getScore()));
 //      }
 //    }
-    abgrBitmapCropped.recycle();
 
     array.pushNull();
     if (classificationsList.size() > 0 && classificationsList.get(0).getCategories().size() > 0) {
       Category classification = classificationsList.get(0).getCategories().get(0);
-      array.pushString(classification.getLabel());
-      array.pushDouble(classification.getScore());
+      if (classification.getScore() > 0.7) {
+        ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
+        abgrBitmapCropped.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayStream);
+        byte[] byteArray = byteArrayStream.toByteArray();
+  
+        array.pushString(classification.getLabel());
+        array.pushDouble(classification.getScore());
+        array.pushString(Base64.encodeToString(byteArray, Base64.DEFAULT));
+      }
     } else {
       array.pushNull();
     }
+    abgrBitmapCropped.recycle();
     return array;
 
   }

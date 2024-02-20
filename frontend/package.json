@@ -39,6 +39,7 @@
     "react-native-vector-icons": "^9.2.0",
     "react-native-vision-camera": "github:mrousavy/react-native-vision-camera#d62a2cd",
     "react-native-worklets": "github:chrfalch/react-native-worklets#3ac2fbb",
+    "rnc-mapbox-nav": "^0.1.1",
     "string-hash-64": "^1.0.3",
     "validate.js": "^0.13.1"
   },
