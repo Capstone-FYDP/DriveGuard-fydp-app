@@ -118,7 +118,7 @@ const SessionDetails = ({ route, navigation }) => {
                 noTouchOpacity
               />
               <Text style={styles.infoCardInner}>
-                Date: {humanDateString(new Date(session.startDate))} |{" "}
+                {humanDateString(new Date(session.startDate))} |{" "}
                 {humanTimeString(new Date(session.startDate))}
               </Text>
             </View>
@@ -130,10 +130,10 @@ const SessionDetails = ({ route, navigation }) => {
                 noTouchOpacity
               />
               <Text style={styles.infoCardInner}>
-                Duration:{" "}
                 {session.status == "COMPLETED"
                   ? getTimeDuration(session.startDate, session.endDate)
-                  : []}
+                  : []}{" "}
+                min
               </Text>
             </View>
             <View style={styles.attribute}>

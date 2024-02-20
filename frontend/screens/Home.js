@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, FlatList } from "react-native";
+import { StyleSheet, Text, View, FlatList, ScrollView } from "react-native";
 import CustomCard from "../components/card/custom-card";
 import { MainContext } from "../context/MainContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
+import { LineChart } from "react-native-chart-kit";
+import { Dimensions } from "react-native";
 
 const Home = () => {
   const context = useContext(MainContext);
   const [total, setTotal] = useState();
   const [isLoading, setLoading] = useState(true);
   const [classData, setClassData] = useState([]);
+  const [graphData, setGraphData] = useState([]);
+  const screenWidth = Dimensions.get("window").width;
+  const pastDays = 10;
 
   const DashboardCard = ({ item }) => {
     return (
@@ -37,6 +42,39 @@ const Home = () => {
       return await AsyncStorage.getItem("auth_token");
     } catch (e) {
       console.log(e);
+    }
+  };
+
+  const getSessions = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(context.fetchPath + `api/getSessions`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-tokens": token,
+        },
+      });
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: "Error",
+          text2: json.message,
+          type: "error",
+        });
+      } else {
+        //get the most recent sessions
+        const pastSessions = json.sessionData
+          .map((item) => {
+            return item.numOfIncidents;
+          })
+          .slice(0, pastDays);
+
+        setGraphData(pastSessions);
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -93,6 +131,7 @@ const Home = () => {
   };
 
   useEffect(() => {
+    getSessions();
     getTotalDistractions();
     getClassificationData();
   }, []);
@@ -109,38 +148,74 @@ const Home = () => {
           <Text
             style={[styles.headerTitle, { color: context.secondaryColour }]}
           >
-            My Driving Score
+            Dashboard
           </Text>
         </View>
       </View>
+
       {isLoading ? (
         <LoadingIndicator isAnimating={true} />
       ) : (
-        <FlatList
-          ListHeaderComponent={
-            <CustomCard
-              outerStyle={[
-                styles.infoCardOuter,
-                styles.firstCard,
-                { backgroundColor: context.primaryColour },
-              ]}
-              innerStyle={styles.infoCardInner}
-            >
-              <View style={styles.firstCardTextContainer}>
-                <Text style={[styles.title, styles.firstCardTitle]}>
-                  Total Distractions
-                </Text>
-                <Text style={[styles.number, styles.firstCardNumber]}>
-                  {total}
-                </Text>
-              </View>
-            </CustomCard>
-          }
-          numColumns={2}
-          columnWrapperStyle={styles.flatListContainer}
-          data={Object.keys(classData)}
-          renderItem={DashboardCard}
-        />
+        <>
+          <View style={styles.graphContainer}>
+            <Text style={[styles.graphTitle, { color: context.primaryColour }]}>
+              {`Your last ${pastDays} trips`}
+            </Text>
+            <LineChart
+              data={{
+                datasets: [
+                  {
+                    data: graphData,
+                  },
+                ],
+              }}
+              width={screenWidth * 0.9}
+              height={220}
+              yAxisInterval={10}
+              chartConfig={{
+                backgroundGradientFrom: context.screenBackground,
+                backgroundGradientTo: context.screenBackground,
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
+                labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+                propsForDots: {
+                  r: "0",
+                  strokeWidth: "1",
+                  stroke: context.tertiaryColour,
+                },
+              }}
+              bezier
+              segments={4}
+              fromZero
+            />
+          </View>
+          <FlatList
+            ListHeaderComponent={
+              <CustomCard
+                outerStyle={[
+                  styles.infoCardOuter,
+                  styles.firstCard,
+                  { backgroundColor: context.primaryColour },
+                ]}
+                innerStyle={styles.infoCardInner}
+              >
+                <View style={styles.firstCardTextContainer}>
+                  <Text style={[styles.title, styles.firstCardTitle]}>
+                    Total Distractions
+                  </Text>
+                  <Text style={[styles.number, styles.firstCardNumber]}>
+                    {total}
+                  </Text>
+                </View>
+              </CustomCard>
+            }
+            numColumns={2}
+            columnWrapperStyle={styles.flatListContainer}
+            data={Object.keys(classData)}
+            renderItem={DashboardCard}
+            nestedScrollEnabled
+          />
+        </>
       )}
     </View>
   );
@@ -156,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     paddingTop: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
   },
   textWrapper: {
     width: "85%",
@@ -168,6 +243,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 30,
     fontWeight: "600",
+  },
+  graphContainer: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  graphTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 40,
+    marginBottom: 15,
   },
   flatListContainer: {
     width: "85%",
