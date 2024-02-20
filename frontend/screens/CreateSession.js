@@ -103,7 +103,7 @@ const App = () => {
     //setBase64(base64)
     classif = mapClassToLabel(classif)
     try {
-      if (classif != "None" && classif != classRef.current) {
+      if (classif != "Safe driving" && classif != classRef.current) {
         setIncidentCoordinates([
           ...incidentCoordinatesRef.current,
           {
@@ -120,7 +120,7 @@ const App = () => {
           autoHide: false,
         });
         ///////////////////////////
-      } else if (classif == "None") {
+      } else if (classif == "Safe driving") {
         Toast.hide();
       }
     } catch (error) {
@@ -136,7 +136,7 @@ const App = () => {
         let cur = new Date();
         const result = toBase64(frame)
         let end = new Date();
-        console.log(end - cur);
+        console.log(`Image Processor and Classifier RTT: ${end - cur}ms`);
         if (result[0] != null) {
           console.log(result[0])
         } else if (result[1] != null) {
@@ -144,7 +144,7 @@ const App = () => {
           processFrameJS(result[1], result[3])
         }
       })
-  }, [])
+  }, [processFrameJS])
 
   const addIncident = async (classification, base64) => {
     try {
@@ -242,6 +242,13 @@ const App = () => {
                 const { latitude, longitude } = event.nativeEvent;
                 // console.log('onLocationChange', event.nativeEvent);
                 setLocation([longitude, latitude])
+                setRouteCoordinates([
+                  ...routeCoordinates,
+                  {
+                    latitude: latitude,
+                    longitude: longitude,
+                  }
+                ])
               }}
               onRouteProgressChange={(event) => {
                 const {
@@ -254,47 +261,30 @@ const App = () => {
               }}
               onError={(event) => {
                 const { message } = event.nativeEvent;
+                if (sessionId != null) {
+                  endSession();
+                }
                 alert(message);
               }}
               onCancelNavigation={() => {
                 // User tapped the "X" cancel button in the nav UI
                 // or canceled via the OS system tray on android.
                 // Do whatever you need to here.
+                if (sessionId != null) {
+                  endSession();
+                }
                 alert('Cancelled navigation event');
               }}
               onArrive={() => {
                 // Called when you arrive at the destination.
+                if (sessionId != null) {
+                  endSession();
+                }
                 alert('You have reached your destination');
               }}
             />
           )
         }
-        {/* <MapView
-          style={styles.mapStyle}
-          provider={PROVIDER_GOOGLE}
-          region={{
-            latitude: 43.4729452,
-            longitude: -80.5321545,
-            latitudeDelta: 0.009,
-            longitudeDelta: 0.009,
-          }}
-          showsUserLocation
-          followsUserLocation
-          loadingEnabled
-        >
-          {
-            incidentCoordinates.map( coordinates => {
-              return <Marker
-                coordinate={{
-                  latitude: coordinates.latitude,
-                  longitude: coordinates.longitude,
-                }}
-                pinColor="red"
-              />
-            })
-          }
-          <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor={context.primaryColour}/>
-        </MapView> */}
         {isFocused && (device != null) && hasCameraPermissions &&
           <View style={styles.cameraStyle}>
             <Camera 
@@ -306,53 +296,21 @@ const App = () => {
               preset="cif-352x288"
               frameProcessor={sessionId != null ? frameProcessor : null}
             />
-            {/* {base64 != null && <Image style={styles.imageStyle} resizeMode='contain' source={{uri: `data:image/jpeg;base64,${base64}`}}/>} */}
           </View>
         }
-        {/* <View style={styles.startButton}>
-          <View style={styles.semiCircleWrapper}>
-            <View style={[styles.semiCircle, {backgroundColor: context.primaryColour}]} />
-          </View>
-          <View style={[styles.rectangle, {backgroundColor: context.primaryColour}]}>
-          {buttonLoading ? (
-                <LoadingIndicator color={'white'} isAnimating={true} />
-                ) : (
-                  <IconBadge 
-                    color = {"white"}
-                    onPress={button == "play" ? createSession : endSession}
-                    library="FontAwesome"
-                    icon={button}
-                    size={30}
-                  />
-            )}
-          </View>
-        </View> */}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  // createContainer: {
-  //   position: "absolute",
-  //   bottom: 0,
-  //   top: 0,
-  //   right: 0,
-  //   left: 0,
-  //   flex: 1,
-  //   alignItems: "center",
-  //   backgroundColor: '#fffbf6',
-  // },
   createContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mapStyle: {
-    // position: "absolute",
-    // top: 0,
-    // left: 0,
-    // right: 0,
-    // bottom: 0,
+    position: 'absolute',
+    zIndex: 150,
     width: '100%',
     height: '100%'
   },
@@ -391,13 +349,10 @@ const styles = StyleSheet.create({
   },
   cameraStyle: {
     position: "absolute",
-    width: 100,
-    height: 100,
+    width: 5,
+    height: 5,
     bottom: 0,
     right: 0,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: "white",
     zIndex: 100,
   },
   imageStyle: {
