@@ -1,17 +1,74 @@
-import React, { useContext } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useContext } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   humanDateString,
   humanTimeString,
   pluralize,
-} from "../utils/string-utils";
-import IconBadge from "../components/iconBadge/custom-iconBadge";
-import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
-import { MainContext } from "../context/MainContext";
+} from '../utils/string-utils';
+import IconBadge from '../components/iconBadge/custom-iconBadge';
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
+import { MainContext } from '../context/MainContext';
 
 const SessionDetails = ({ route, navigation }) => {
   const { session } = route.params;
   const context = useContext(MainContext);
+
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem('auth_token');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const getSession = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        context.fetchPath + `api/getSession/${session.session_id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        setSessions(
+          json.sessionData
+            .map((item) => {
+              return {
+                ...item,
+                startDate: new Date(item.startDate),
+                endDate: new Date(item.endDate),
+              };
+            })
+            .sort((a, b) => {
+              // Put whatevers active at the top first
+              if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
+              if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+              // Sort in descending order from latest to oldest
+              if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+                return a.startDate - b.startDate;
+              return a.endDate - b.endDate;
+            })
+        );
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const path = [
     { latitude: 43.47368, longitude: -80.54025 },
@@ -37,21 +94,21 @@ const SessionDetails = ({ route, navigation }) => {
 
   const getIncidentColor = (numOfIncidents) => {
     if (numOfIncidents == 0) {
-      return "#27ae60";
+      return '#27ae60';
     } else if (numOfIncidents > 0 && numOfIncidents <= 3) {
-      return "#f39c12";
+      return '#f39c12';
     } else {
-      return "#e74c3c";
+      return '#e74c3c';
     }
   };
 
   const getIncidentIcon = (numOfIncidents) => {
     if (numOfIncidents == 0) {
-      return "checkcircleo";
+      return 'checkcircleo';
     } else if (numOfIncidents > 0 && numOfIncidents <= 3) {
-      return "warning";
+      return 'warning';
     } else {
-      return "exclamationcircle";
+      return 'exclamationcircle';
     }
   };
 
@@ -63,11 +120,11 @@ const SessionDetails = ({ route, navigation }) => {
         <View style={styles.textWrapper}>
           <View style={{ marginRight: 20 }}>
             <IconBadge
-              icon="arrowleft"
+              icon='arrowleft'
               size={30}
-              library="AntDesign"
+              library='AntDesign'
               noTouchOpacity
-              onPress={() => navigation.navigate("Trips")}
+              onPress={() => navigation.navigate('Trips')}
             />
           </View>
           <Text
@@ -112,27 +169,27 @@ const SessionDetails = ({ route, navigation }) => {
           >
             <View style={styles.attribute}>
               <IconBadge
-                icon="calendar"
+                icon='calendar'
                 size={22}
-                library="AntDesign"
+                library='AntDesign'
                 noTouchOpacity
               />
               <Text style={styles.infoCardInner}>
-                {humanDateString(new Date(session.startDate))} |{" "}
+                {humanDateString(new Date(session.startDate))} |{' '}
                 {humanTimeString(new Date(session.startDate))}
               </Text>
             </View>
             <View style={styles.attribute}>
               <IconBadge
-                icon="clockcircleo"
+                icon='clockcircleo'
                 size={22}
-                library="AntDesign"
+                library='AntDesign'
                 noTouchOpacity
               />
               <Text style={styles.infoCardInner}>
-                {session.status == "COMPLETED"
+                {session.status == 'COMPLETED'
                   ? getTimeDuration(session.startDate, session.endDate)
-                  : []}{" "}
+                  : []}{' '}
                 min
               </Text>
             </View>
@@ -141,7 +198,7 @@ const SessionDetails = ({ route, navigation }) => {
                 color={getIncidentColor(session.numOfIncidents)}
                 icon={getIncidentIcon(session.numOfIncidents)}
                 size={22}
-                library="AntDesign"
+                library='AntDesign'
                 noTouchOpacity
               />
               <Text
@@ -150,8 +207,8 @@ const SessionDetails = ({ route, navigation }) => {
                   { color: getIncidentColor(session.numOfIncidents) },
                 ]}
               >
-                {session.numOfIncidents}{" "}
-                {pluralize("Incident", session.numOfIncidents)}
+                {session.numOfIncidents}{' '}
+                {pluralize('Incident', session.numOfIncidents)}
               </Text>
             </View>
             {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
@@ -167,60 +224,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapsContainer: {
-    width: "100%",
+    width: '100%',
     height: 300,
-    alignItems: "center",
-    justifyContent: "flex-end",
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   mapStyle: {
-    width: "100%",
+    width: '100%',
     height: 300,
   },
   upperContainer: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     paddingTop: 20,
     paddingBottom: 10,
   },
   textWrapper: {
-    width: "85%",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+    width: '85%',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 20,
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: "600",
-    color: "#3f2021",
+    fontWeight: '600',
+    color: '#3f2021',
   },
   flatListContainer: {
     flex: 1,
-    width: "85%",
-    justifyContent: "space-around",
-    alignSelf: "center",
+    width: '85%',
+    justifyContent: 'space-around',
+    alignSelf: 'center',
   },
   infoCardOuter: {
     marginVertical: 5,
     padding: 15,
     borderRadius: 10,
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   infoCardInner: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     fontSize: 20,
     height: 35,
     marginLeft: 10,
-    textAlignVertical: "center",
+    textAlignVertical: 'center',
   },
   attribute: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 8,
     padding: 5,
   },
