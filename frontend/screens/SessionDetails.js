@@ -19,7 +19,6 @@ import { MainContext } from '../context/MainContext';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 
 const SessionDetails = ({ route, navigation }) => {
   const { session } = route.params;
@@ -187,22 +186,32 @@ const SessionDetails = ({ route, navigation }) => {
     >
       <Modal
         animationType='fade'
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => {
           Alert.alert('Modal has been closed.');
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
             <Image
+              style={{ width: '100%', height: 200, resizeMode: 'stretch' }}
               source={{
-                uri: incidentImage,
+                uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/LeBron_James_%2851959977144%29_%28cropped2%29.jpg/640px-LeBron_James_%2851959977144%29_%28cropped2%29.jpg', //test image - actual one returns null value
               }}
             />
             <Pressable onPress={() => setModalVisible(!modalVisible)}>
-              <Text>Hide Image</Text>
+              <Text
+                style={{
+                  marginTop: 20,
+                  fontSize: 20,
+                  textAlign: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                Hide Image
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -419,29 +428,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     fontWeight: 'bold',
-    // marginTop: 8,
-    // padding: 5,
   },
-  centeredView: {
+  modalBackground: {
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     marginTop: 22,
   },
-  modalView: {
+  modalContainer: {
+    width: '80%',
     margin: 20,
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 155,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    elevation: 20,
   },
 });
 
