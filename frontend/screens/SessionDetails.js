@@ -1,5 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Pressable,
+  Modal,
+  Image,
+} from 'react-native';
 import {
   humanDateString,
   humanTimeString,
@@ -18,6 +26,8 @@ const SessionDetails = ({ route, navigation }) => {
   const [incidents, setIncidents] = useState([]);
   const [isLoading, setLoading] = useState(true);
   const context = useContext(MainContext);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [incidentImage, setIncidentImage] = useState('');
 
   const isFocused = useIsFocused();
 
@@ -81,16 +91,14 @@ const SessionDetails = ({ route, navigation }) => {
   const getIncidents = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(
-        context.fetchPath + `api/getIncidents/${session.session_id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-access-tokens': token,
-          },
-        }
-      );
+      const response = await fetch(context.fetchPath + `api/getIncidents`, {
+        // left it as getIncidents for now to test UI functionality with existing incidents
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+      });
       const json = await response.json();
 
       if (json.message) {
@@ -101,22 +109,21 @@ const SessionDetails = ({ route, navigation }) => {
         });
       } else {
         setIncidents(
-          json.incidentData
-            .map((item) => {
-              return {
-                ...item,
-                classification: item.classification,
-              };
-            })
-            .sort((a, b) => {
-              // Put whatevers active at the top first
-              if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
-              if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
-              // Sort in descending order from latest to oldest
-              if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
-                return a.startDate - b.startDate;
-              return a.endDate - b.endDate;
-            })
+          json.incidentData.map((item) => {
+            return {
+              ...item,
+              classification: item.classification,
+            };
+          })
+          // .sort((a, b) => {
+          //   // Put whatevers active at the top first
+          //   if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
+          //   if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+          //   // Sort in descending order from latest to oldest
+          //   if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+          //     return a.startDate - b.startDate;
+          //   return a.endDate - b.endDate;
+          // })
         );
       }
     } catch (error) {
@@ -178,6 +185,28 @@ const SessionDetails = ({ route, navigation }) => {
     <View
       style={[styles.container, { backgroundColor: context.screenBackground }]}
     >
+      <Modal
+        animationType='fade'
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          Alert.alert('Modal has been closed.');
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Image
+              source={{
+                uri: incidentImage,
+              }}
+            />
+            <Pressable onPress={() => setModalVisible(!modalVisible)}>
+              <Text>Hide Image</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
           <View style={{ marginRight: 20 }}>
@@ -275,7 +304,7 @@ const SessionDetails = ({ route, navigation }) => {
             </View>
             {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
             <View style={styles.incidentsView}>
-              {session.numOfIncidents != 0 ? (
+              {session.numOfIncidents == 0 ? (
                 <>
                   <Text style={styles.incidentsTitle}>List of Incidents</Text>
                   <View>
@@ -284,9 +313,16 @@ const SessionDetails = ({ route, navigation }) => {
                       renderItem={({ item }) => {
                         return (
                           <View>
-                            <Text style={styles.infoCardInner}>
-                              {`\u2022 ${item.classification}`}
-                            </Text>
+                            <Pressable
+                              onPress={() => {
+                                setModalVisible(true);
+                                setIncidentImage(item.image_url);
+                              }}
+                            >
+                              <Text style={styles.infoCardInner}>
+                                {`\u2022 ${item.classification}`}
+                              </Text>
+                            </Pressable>
                           </View>
                         );
                       }}
@@ -385,6 +421,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     // marginTop: 8,
     // padding: 5,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 155,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 
