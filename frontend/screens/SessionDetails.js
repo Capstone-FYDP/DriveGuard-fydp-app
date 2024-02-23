@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { StyleSheet, Text, View, FlatList } from 'react-native';
 import {
   humanDateString,
   humanTimeString,
@@ -8,10 +8,18 @@ import {
 import IconBadge from '../components/iconBadge/custom-iconBadge';
 import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 import { MainContext } from '../context/MainContext';
+import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 
 const SessionDetails = ({ route, navigation }) => {
   const { session } = route.params;
+  const [incidents, setIncidents] = useState([]);
+  const [isLoading, setLoading] = useState(true);
   const context = useContext(MainContext);
+
+  const isFocused = useIsFocused();
 
   const getToken = async () => {
     try {
@@ -21,11 +29,60 @@ const SessionDetails = ({ route, navigation }) => {
     }
   };
 
-  const getSession = async () => {
+  // const getSession = async () => {
+  //   try {
+  //     const token = await getToken();
+  //     const response = await fetch(
+  //       context.fetchPath + `api/getSession/${session.session_id}`,
+  //       {
+  //         method: 'GET',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'x-access-tokens': token,
+  //         },
+  //       }
+  //     );
+  //     const json = await response.json();
+
+  //     if (json.message) {
+  //       Toast.show({
+  //         text1: 'Error',
+  //         text2: json.message,
+  //         type: 'error',
+  //       });
+  //     } else {
+  //       setSessions(
+  //         json.sessionData
+  //           .map((item) => {
+  //             return {
+  //               ...item,
+  //               startDate: new Date(item.startDate),
+  //               endDate: new Date(item.endDate),
+  //             };
+  //           })
+  //           .sort((a, b) => {
+  //             // Put whatevers active at the top first
+  //             if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
+  //             if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
+  //             // Sort in descending order from latest to oldest
+  //             if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
+  //               return a.startDate - b.startDate;
+  //             return a.endDate - b.endDate;
+  //           })
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const getIncidents = async () => {
     try {
       const token = await getToken();
       const response = await fetch(
-        context.fetchPath + `api/getSession/${session.session_id}`,
+        context.fetchPath + `api/getIncidents/${session.session_id}`,
         {
           method: 'GET',
           headers: {
@@ -43,13 +100,12 @@ const SessionDetails = ({ route, navigation }) => {
           type: 'error',
         });
       } else {
-        setSessions(
-          json.sessionData
+        setIncidents(
+          json.incidentData
             .map((item) => {
               return {
                 ...item,
-                startDate: new Date(item.startDate),
-                endDate: new Date(item.endDate),
+                classification: item.classification,
               };
             })
             .sort((a, b) => {
@@ -69,6 +125,12 @@ const SessionDetails = ({ route, navigation }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isFocused) {
+      getIncidents();
+    }
+  }, [isFocused]);
 
   const path = [
     { latitude: 43.47368, longitude: -80.54025 },
@@ -212,6 +274,29 @@ const SessionDetails = ({ route, navigation }) => {
               </Text>
             </View>
             {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
+            <View style={styles.incidentsView}>
+              {session.numOfIncidents != 0 ? (
+                <>
+                  <Text style={styles.incidentsTitle}>List of Incidents</Text>
+                  <View>
+                    <FlatList
+                      data={incidents}
+                      renderItem={({ item }) => {
+                        return (
+                          <View>
+                            <Text style={styles.infoCardInner}>
+                              {`\u2022 ${item.classification}`}
+                            </Text>
+                          </View>
+                        );
+                      }}
+                    />
+                  </View>
+                </>
+              ) : (
+                <></>
+              )}
+            </View>
           </View>
         </>
       )}
@@ -284,6 +369,22 @@ const styles = StyleSheet.create({
   attributeText: {
     marginLeft: 8,
     fontSize: 18,
+  },
+  incidentsTitle: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
+  incidentsView: {
+    marginTop: 25,
+  },
+  noIncidents: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    fontWeight: 'bold',
+    // marginTop: 8,
+    // padding: 5,
   },
 });
 
