@@ -91,17 +91,14 @@ const SessionDetails = ({ route, navigation }) => {
   const getIncidents = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(
-        context.fetchPath + `api/getIncidents/${session.session_id}`,
-        {
-          // left it as getIncidents for now to test UI functionality with existing incidents
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-access-tokens': token,
-          },
-        }
-      );
+      const response = await fetch(context.fetchPath + `api/getIncidents`, {
+        // left it as getIncidents for now to test UI functionality with existing incidents
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+      });
       const json = await response.json();
 
       if (json.message) {
@@ -112,21 +109,22 @@ const SessionDetails = ({ route, navigation }) => {
         });
       } else {
         setIncidents(
-          json.incidentData.map((item) => {
-            return {
-              ...item,
-              classification: item.classification,
-            };
-          })
-          // .sort((a, b) => {
-          //   // Put whatevers active at the top first
-          //   if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
-          //   if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
-          //   // Sort in descending order from latest to oldest
-          //   if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
-          //     return a.startDate - b.startDate;
-          //   return a.endDate - b.endDate;
-          // })
+          json.incidentData
+            .map((item) => {
+              return {
+                ...item,
+                classification: item.classification,
+              };
+            })
+            .sort((a, b) => {
+              const dateA = a.date;
+              const dateB = b.date;
+
+              if (dateA > dateB) {
+                return -1;
+              }
+              return 1;
+            })
         );
       }
     } catch (error) {
@@ -209,18 +207,6 @@ const SessionDetails = ({ route, navigation }) => {
               onPress={() => setModalVisible(!modalVisible)}
               title='Hide Image'
             ></Button>
-            {/* <Pressable onPress={() => setModalVisible(!modalVisible)}>
-              <Text
-                style={{
-                  marginTop: 20,
-                  fontSize: 20,
-                  textAlign: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                Hide Image
-              </Text>
-            </Pressable> */}
           </View>
         </View>
       </Modal>
@@ -321,7 +307,7 @@ const SessionDetails = ({ route, navigation }) => {
             </View>
             {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
             <View style={styles.incidentsView}>
-              {session.numOfIncidents != 0 ? (
+              {session.numOfIncidents == 0 ? (
                 <>
                   <Text style={styles.incidentsTitle}>List of Incidents</Text>
                   <View style={styles.flatListContainer}>
