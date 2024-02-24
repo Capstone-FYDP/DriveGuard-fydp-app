@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     flex: 1,
+    flexGrow: 1,
     width: '85%',
     justifyContent: 'space-around',
     alignSelf: 'center',
