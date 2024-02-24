@@ -104,7 +104,7 @@ const MySessions = ({ navigation }) => {
       ) : (
         <View style={styles.flatListContainer}>
           <FlatList
-            data={sessions}
+            data={sessions.reverse()}
             renderItem={({ item }) => {
               return (
                 <>
