@@ -70,7 +70,6 @@ const Home = () => {
             return item.numOfIncidents;
           })
           .slice(0, pastDays);
-
         setGraphData(pastSessions);
       }
     } catch (error) {
@@ -112,7 +111,6 @@ const Home = () => {
         }
       );
       const json = await response.json();
-
       if (json.message) {
         Toast.show({
           text1: "Error",
@@ -120,20 +118,22 @@ const Home = () => {
           type: "error",
         });
       } else {
-        console.log(json.userData[0]);
         setClassData(json.userData[0]);
       }
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    getSessions();
-    getTotalDistractions();
-    getClassificationData();
+    async function fetchDashboardData() {
+      await getSessions();
+      await getTotalDistractions();
+      await getClassificationData();
+      setLoading(false);
+    }
+
+    fetchDashboardData();
   }, []);
 
   return (
@@ -156,45 +156,46 @@ const Home = () => {
       {isLoading ? (
         <LoadingIndicator isAnimating={true} />
       ) : (
-        <>
-          <View style={styles.graphContainer}>
-            <Text style={[styles.graphTitle, { color: context.primaryColour }]}>
-              {`Your last ${pastDays} trips`}
-            </Text>
-            <LineChart
-              data={{
-                datasets: [
-                  {
-                    data: graphData,
-                  },
-                ],
-              }}
-              width={screenWidth * 0.9}
-              height={220}
-              yAxisInterval={10}
-              chartConfig={{
-                backgroundGradientFrom: context.screenBackground,
-                backgroundGradientTo: context.screenBackground,
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
-                labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
-                propsForDots: {
-                  r: "0",
-                  strokeWidth: "1",
-                  stroke: context.tertiaryColour,
-                },
-              }}
-              bezier
-              segments={4}
-              fromZero
-            />
-          </View>
-          <FlatList
-            ListHeaderComponent={
+        <FlatList
+          ListHeaderComponent={
+            <>
+              <View style={styles.graphContainer}>
+                <Text
+                  style={[styles.graphTitle, { color: context.primaryColour }]}
+                >
+                  {`Your last ${pastDays} trips`}
+                </Text>
+                <LineChart
+                  data={{
+                    datasets: [
+                      {
+                        data: graphData,
+                      },
+                    ],
+                  }}
+                  width={screenWidth * 0.9}
+                  height={220}
+                  yAxisInterval={10}
+                  chartConfig={{
+                    backgroundGradientFrom: context.screenBackground,
+                    backgroundGradientTo: context.screenBackground,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
+                    labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+                    propsForDots: {
+                      r: "0",
+                      strokeWidth: "1",
+                      stroke: context.tertiaryColour,
+                    },
+                  }}
+                  bezier
+                  segments={4}
+                  fromZero
+                />
+              </View>
               <CustomCard
                 outerStyle={[
                   styles.infoCardOuter,
-                  styles.firstCard,
                   { backgroundColor: context.primaryColour },
                 ]}
                 innerStyle={styles.infoCardInner}
@@ -208,14 +209,14 @@ const Home = () => {
                   </Text>
                 </View>
               </CustomCard>
-            }
-            numColumns={2}
-            columnWrapperStyle={styles.flatListContainer}
-            data={Object.keys(classData)}
-            renderItem={DashboardCard}
-            nestedScrollEnabled
-          />
-        </>
+            </>
+          }
+          numColumns={2}
+          columnWrapperStyle={styles.flatListContainer}
+          data={Object.keys(classData)}
+          renderItem={DashboardCard}
+          nestedScrollEnabled
+        />
       )}
     </View>
   );
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
   },
   infoCardOuter: {
     width: "85%",
-    marginVertical: 10,
+    marginBottom: 10,
     padding: 15,
     borderRadius: 20,
     alignSelf: "center",
@@ -284,9 +285,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     height: 80,
-  },
-  firstCard: {
-    marginTop: 20,
   },
   firstCardTextContainer: {
     justifyContent: "space-evenly",
