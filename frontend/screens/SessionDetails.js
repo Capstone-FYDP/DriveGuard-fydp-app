@@ -203,10 +203,12 @@ const SessionDetails = ({ route, navigation }) => {
                 uri: incidentImage,
               }}
             />
-            <Button
-              onPress={() => setModalVisible(!modalVisible)}
-              title='Hide Image'
-            ></Button>
+            <View style={styles.hideButtonStyle}>
+              <Button
+                onPress={() => setModalVisible(!modalVisible)}
+                title='Hide Image'
+              ></Button>
+            </View>
           </View>
         </View>
       </Modal>
@@ -447,7 +449,9 @@ const styles = StyleSheet.create({
   },
   incidentButtonStyle: {
     padding: 8,
-    alignContent: 'left',
+  },
+  hideButtonStyle: {
+    marginTop: 19,
   },
 });
 
