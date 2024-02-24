@@ -7,6 +7,7 @@ import {
   Pressable,
   Modal,
   Image,
+  Button,
 } from 'react-native';
 import {
   humanDateString,
@@ -90,14 +91,17 @@ const SessionDetails = ({ route, navigation }) => {
   const getIncidents = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(context.fetchPath + `api/getIncidents`, {
-        // left it as getIncidents for now to test UI functionality with existing incidents
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-tokens': token,
-        },
-      });
+      const response = await fetch(
+        context.fetchPath + `api/getIncidents/${session.session_id}`,
+        {
+          // left it as getIncidents for now to test UI functionality with existing incidents
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
       const json = await response.json();
 
       if (json.message) {
@@ -198,10 +202,14 @@ const SessionDetails = ({ route, navigation }) => {
             <Image
               style={{ width: '100%', height: 200, resizeMode: 'stretch' }}
               source={{
-                uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/LeBron_James_%2851959977144%29_%28cropped2%29.jpg/640px-LeBron_James_%2851959977144%29_%28cropped2%29.jpg', //test image - actual one returns null value
+                uri: incidentImage,
               }}
             />
-            <Pressable onPress={() => setModalVisible(!modalVisible)}>
+            <Button
+              onPress={() => setModalVisible(!modalVisible)}
+              title='Hide Image'
+            ></Button>
+            {/* <Pressable onPress={() => setModalVisible(!modalVisible)}>
               <Text
                 style={{
                   marginTop: 20,
@@ -212,7 +220,7 @@ const SessionDetails = ({ route, navigation }) => {
               >
                 Hide Image
               </Text>
-            </Pressable>
+            </Pressable> */}
           </View>
         </View>
       </Modal>
@@ -313,25 +321,22 @@ const SessionDetails = ({ route, navigation }) => {
             </View>
             {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
             <View style={styles.incidentsView}>
-              {session.numOfIncidents == 0 ? (
+              {session.numOfIncidents != 0 ? (
                 <>
                   <Text style={styles.incidentsTitle}>List of Incidents</Text>
-                  <View>
+                  <View style={styles.flatListContainer}>
                     <FlatList
                       data={incidents}
                       renderItem={({ item }) => {
                         return (
-                          <View>
-                            <Pressable
+                          <View style={styles.incidentButtonStyle}>
+                            <Button
                               onPress={() => {
                                 setModalVisible(true);
-                                setIncidentImage(item.image_url);
+                                setIncidentImage(item.uri);
                               }}
-                            >
-                              <Text style={styles.infoCardInner}>
-                                {`\u2022 ${item.classification}`}
-                              </Text>
-                            </Pressable>
+                              title={item.classification}
+                            ></Button>
                           </View>
                         );
                       }}
@@ -419,6 +424,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: 'bold',
     textDecorationLine: 'underline',
+    alignSelf: 'center',
   },
   incidentsView: {
     marginTop: 25,
@@ -426,7 +432,7 @@ const styles = StyleSheet.create({
   noIncidents: {
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'left',
     fontWeight: 'bold',
   },
   modalBackground: {
@@ -445,6 +451,16 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
     elevation: 20,
+  },
+  flatListContainer: {
+    flex: 1,
+    width: '85%',
+    justifyContent: 'space-around',
+    alignSelf: 'center',
+  },
+  incidentButtonStyle: {
+    padding: 8,
+    alignContent: 'left',
   },
 });
 
