@@ -319,7 +319,7 @@ def updateCoords(current_user):
     user_data['public_id']=current_user.public_id
     userSession = Session.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).first()
     if userSession:
-        userSession.coords = deSeralizeCoords(data['coords'])
+        userSession.coords = deserializeCoords(data['coords'])
         db.session.commit()
         return {"message":"Updated coords"}
     else:
@@ -393,7 +393,7 @@ def getSession(current_user):
             sessionData['numOfIncidents'] = data.numOfIncidents
             sessionData['image_url']= data.image_url
             if data.coords:
-                sessionData['coords'] = searlizeCoords(data.coords)
+                sessionData['coords'] = serializeCoords(data.coords)
 
 
             output.append(sessionData)
@@ -419,15 +419,15 @@ def viewSession(current_user, sessionId):
         sessionData['numOfIncidents'] = userSession.numOfIncidents
         sessionData['image_url ']= userSession.image_url 
         if userSession.coords:
-            sessionData['coords'] = searlizeCoords(userSession.coords)
+            sessionData['coords'] = serializeCoords(userSession.coords)
 
         
         return jsonify(userSession = sessionData)
     else:
         return jsonify(message= "Not a valid session")
-def deSeralizeCoords(coords):
+def deserializeCoords(coords):
      return ', '.join([f"{x}:{y}" for x, y in coords])
-def searlizeCoords(coord_string):
+def serializeCoords(coord_string):
     pairs = coord_string.split(', ')
     return [[pair.split(':')[0], pair.split(':')[1]] for pair in pairs]
 
