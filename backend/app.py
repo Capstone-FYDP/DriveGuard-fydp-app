@@ -319,7 +319,14 @@ def updateCoords(current_user):
     user_data['public_id']=current_user.public_id
     userSession = Session.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).first()
     if userSession:
-        userSession.coords = deserializeCoords(data['coords'])
+        list_coords = ""
+        if userSession.coords:
+            list_coords = userSession.coords
+            print(list_coords)
+            userSession.coords = list_coords + ", " + deserializeCoords(data['coords'])
+        else:
+            userSession.coords = deserializeCoords(data['coords'])
+
         db.session.commit()
         return {"message":"Updated coords"}
     else:
