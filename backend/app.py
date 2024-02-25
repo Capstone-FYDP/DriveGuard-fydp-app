@@ -426,7 +426,6 @@ def viewSession(current_user, sessionId):
     else:
         return jsonify(message= "Not a valid session")
 def deSeralizeCoords(coords):
-     print(coords)
      return ', '.join([f"{x}:{y}" for x, y in coords])
 def searlizeCoords(coord_string):
     pairs = coord_string.split(', ')
