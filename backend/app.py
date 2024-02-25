@@ -10,7 +10,6 @@ import base64
 import pickle
 import numpy as np
 import json
-import git
 import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -99,12 +98,9 @@ class Session(db.Model):
     status = Column(String(50))
     numOfIncidents = Column(Integer)
     image_url  = Column(String)
+    coords = Column(String)
 
     
-@app.route('/')
-def main_page():
-    return 'DriveGuard Server Running.'
-
 @app.route("/api/validateToken", methods=['GET'])
 def validateToken():
     if not request.headers.get('x-access-tokens'):
@@ -237,8 +233,6 @@ def getIncident(current_user, sessionId):
 @token_required
 def addIncident(current_user):
     
-    # storage_client = storage.Client(project='fydp-project-393020')
-  
     json_data = request.get_json()
     now = datetime.datetime.now()
     BUCKET = 'driveraid'
@@ -316,7 +310,20 @@ def mapDistractions(current_user):
 #                     "classification": getClassficiations(res[0]),
 #                     "confidence": round(float(res[1]), 2)
 #                     })
-
+@app.route('/api/updateCoords', methods = ['PUT'])
+@token_required
+def updateCoords(current_user):
+    data = request.json
+    sessionId = data['sessionId']
+    user_data={}
+    user_data['public_id']=current_user.public_id
+    userSession = Session.query.filter_by(user_id = user_data['public_id'], session_id=sessionId).first()
+    if userSession:
+        userSession.coords = deSeralizeCoords(data['coords'])
+        db.session.commit()
+        return {"message":"Updated coords"}
+    else:
+        return {"message": "No session found"}
 @app.route('/api/createSession', methods = ['POST'])
 @token_required
 def createSession(current_user):
@@ -384,7 +391,10 @@ def getSession(current_user):
             sessionData['endDate'] = data.endDate
             sessionData['status'] = data.status
             sessionData['numOfIncidents'] = data.numOfIncidents
-            sessionData['image_url']= data.image_url 
+            sessionData['image_url']= data.image_url
+            if data.coords:
+                sessionData['coords'] = searlizeCoords(data.coords)
+
 
             output.append(sessionData)
         return jsonify(sessionData = output)
@@ -408,10 +418,19 @@ def viewSession(current_user, sessionId):
         sessionData['status'] = userSession.status
         sessionData['numOfIncidents'] = userSession.numOfIncidents
         sessionData['image_url ']= userSession.image_url 
+        if userSession.coords:
+            sessionData['coords'] = searlizeCoords(userSession.coords)
+
         
         return jsonify(userSession = sessionData)
     else:
         return jsonify(message= "Not a valid session")
+def deSeralizeCoords(coords):
+     print(coords)
+     return ', '.join([f"{x}:{y}" for x, y in coords])
+def searlizeCoords(coord_string):
+    pairs = coord_string.split(', ')
+    return [[pair.split(':')[0], pair.split(':')[1]] for pair in pairs]
 
 @app.route('/deploy_server', methods=['POST'])
 def deployServer():
@@ -453,6 +472,8 @@ def deployServer():
         build_commit = f'build_commit = "{commit_hash}"'
         print(f'{build_commit}')
         return 'Updated server to commit {commit}'.format(commit=commit_hash)
-
+@app.route('/')
+def main_page():
+    return 'DriveGuard Server Running.'
 if __name__ == '__main__':
     app.run(debug=True)
