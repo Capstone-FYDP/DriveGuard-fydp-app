@@ -218,7 +218,7 @@ const App = () => {
   const endSession = async () => {
     Toast.hide()
     if (routeCoordinatesRef.current.length > 0) {
-      coordsCopy = [...routeCoordinates]
+      coordsCopy = [...routeCoordinatesRef.current]
       await updateSessionCoords(coordsCopy)
     }
     try {
