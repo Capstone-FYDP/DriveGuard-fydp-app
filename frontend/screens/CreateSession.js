@@ -16,6 +16,7 @@ import IconBadge from '../components/iconBadge/custom-iconBadge';
 import { capitalize } from 'validate.js';
 import { mapClassToLabel } from '../utils/string-utils';
 import MapboxNavigation from 'rnc-mapbox-nav';
+import { getDistance } from 'geolib';
 
 const App = () => {
   const context = useContext(MainContext);
@@ -216,6 +217,10 @@ const App = () => {
 
   const endSession = async () => {
     Toast.hide()
+    if (routeCoordinatesRef.current.length > 0) {
+      coordsCopy = [...routeCoordinates]
+      await updateSessionCoords(coordsCopy)
+    }
     try {
       const token = await getToken();
 
@@ -259,26 +264,38 @@ const App = () => {
               hideStatusView
               onLocationChange={(event) => {
                 const { latitude, longitude } = event.nativeEvent;
-                // console.log('onLocationChange', event.nativeEvent);
-                setLocation([longitude, latitude])
-                if (routeCoordinates.length >= context.routeCooordinatesLimit) {
-                  coordsCopy = [...routeCoordinates]
-                  console.log(coordsCopy)
-                  updateSessionCoords(coordsCopy)
-                  setRouteCoordinates([
-                    {
-                      latitude: latitude,
-                      longitude: longitude,
-                    }
-                  ])
-                } else {
-                  setRouteCoordinates([
-                    ...routeCoordinates,
-                    {
-                      latitude: latitude,
-                      longitude: longitude,
-                    }
-                  ])
+                const distanceTravelled = getDistance(
+                  {
+                    latitude: location[1],
+                    longitude: location[0],
+                  },
+                  {
+                    latitude: latitude,
+                    longitude: longitude,
+                  },
+                )
+                console.log(`New coords: [$${latitude}, ${longitude}], Distance travelled: ${distanceTravelled}`)
+                if (distanceTravelled >= context.locationPollDistanceMetres) {
+                  setLocation([longitude, latitude])
+                  console.log(`Coordinates Array Length: ${routeCoordinates.length}`)
+                  if (routeCoordinates.length >= context.routeCoordinatesLimit) {
+                    coordsCopy = [...routeCoordinates]
+                    updateSessionCoords(coordsCopy)
+                    setRouteCoordinates([
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
+                  } else {
+                    setRouteCoordinates([
+                      ...routeCoordinates,
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
+                  }
                 }
               }}
               onRouteProgressChange={(event) => {
