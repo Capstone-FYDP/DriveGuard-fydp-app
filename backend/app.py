@@ -10,6 +10,7 @@ import base64
 import pickle
 import numpy as np
 import json
+import git
 import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
