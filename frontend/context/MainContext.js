@@ -10,6 +10,7 @@ export const MainProvider = ({ children }) => {
   const secondaryColour = "#17435E";
   const tertiaryColour = "#2c79b3";
   const screenBackground = "#F4F8FB";
+  const routeCoordinatesLimit = 20;
 
   return (
     <MainContext.Provider

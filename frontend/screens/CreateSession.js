@@ -168,6 +168,25 @@ const App = () => {
     }
   }
 
+  const updateSessionCoords = async (coords) => {
+    try {
+      const token = await getToken();
+      await fetch(context.fetchPath + `api/updateCoords`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({
+          "sessionId": sessionIdRef.current,
+          "coords": coords,
+        })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const createSession = async () => {
     setIncidentCoordinates([]);
     setRouteCoordinates([]);
@@ -242,13 +261,25 @@ const App = () => {
                 const { latitude, longitude } = event.nativeEvent;
                 // console.log('onLocationChange', event.nativeEvent);
                 setLocation([longitude, latitude])
-                setRouteCoordinates([
-                  ...routeCoordinates,
-                  {
-                    latitude: latitude,
-                    longitude: longitude,
-                  }
-                ])
+                if (routeCoordinates.length >= context.routeCooordinatesLimit) {
+                  coordsCopy = [...routeCoordinates]
+                  console.log(coordsCopy)
+                  updateSessionCoords(coordsCopy)
+                  setRouteCoordinates([
+                    {
+                      latitude: latitude,
+                      longitude: longitude,
+                    }
+                  ])
+                } else {
+                  setRouteCoordinates([
+                    ...routeCoordinates,
+                    {
+                      latitude: latitude,
+                      longitude: longitude,
+                    }
+                  ])
+                }
               }}
               onRouteProgressChange={(event) => {
                 const {
@@ -273,7 +304,7 @@ const App = () => {
                 if (sessionId != null) {
                   endSession();
                 }
-                alert('Cancelled navigation event');
+                alert('Session ended');
               }}
               onArrive={() => {
                 // Called when you arrive at the destination.
