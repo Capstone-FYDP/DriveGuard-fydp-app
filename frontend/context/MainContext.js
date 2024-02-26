@@ -10,6 +10,8 @@ export const MainProvider = ({ children }) => {
   const secondaryColour = "#17435E";
   const tertiaryColour = "#2c79b3";
   const screenBackground = "#F4F8FB";
+  const routeCoordinatesLimit = 20;
+  const locationPollDistanceMetres = 1;
 
   return (
     <MainContext.Provider
@@ -21,6 +23,8 @@ export const MainProvider = ({ children }) => {
         secondaryColour,
         tertiaryColour,
         screenBackground,
+        routeCoordinatesLimit,
+        locationPollDistanceMetres,
       }}
     >
       {children}

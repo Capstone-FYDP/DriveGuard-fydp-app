@@ -16,6 +16,7 @@ import IconBadge from '../components/iconBadge/custom-iconBadge';
 import { capitalize } from 'validate.js';
 import { mapClassToLabel } from '../utils/string-utils';
 import MapboxNavigation from 'rnc-mapbox-nav';
+import { getDistance } from 'geolib';
 
 const App = () => {
   const context = useContext(MainContext);
@@ -168,6 +169,25 @@ const App = () => {
     }
   }
 
+  const updateSessionCoords = async (coords) => {
+    try {
+      const token = await getToken();
+      await fetch(context.fetchPath + `api/updateCoords`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({
+          "sessionId": sessionIdRef.current,
+          "coords": coords,
+        })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const createSession = async () => {
     setIncidentCoordinates([]);
     setRouteCoordinates([]);
@@ -197,6 +217,10 @@ const App = () => {
 
   const endSession = async () => {
     Toast.hide()
+    if (routeCoordinatesRef.current.length > 0) {
+      coordsCopy = [...routeCoordinatesRef.current]
+      await updateSessionCoords(coordsCopy)
+    }
     try {
       const token = await getToken();
 
@@ -240,15 +264,39 @@ const App = () => {
               hideStatusView
               onLocationChange={(event) => {
                 const { latitude, longitude } = event.nativeEvent;
-                // console.log('onLocationChange', event.nativeEvent);
-                setLocation([longitude, latitude])
-                setRouteCoordinates([
-                  ...routeCoordinates,
+                const distanceTravelled = getDistance(
+                  {
+                    latitude: location[1],
+                    longitude: location[0],
+                  },
                   {
                     latitude: latitude,
                     longitude: longitude,
+                  },
+                )
+                console.log(`New coords: [$${latitude}, ${longitude}], Distance travelled: ${distanceTravelled}`)
+                if (distanceTravelled >= context.locationPollDistanceMetres) {
+                  setLocation([longitude, latitude])
+                  console.log(`Coordinates Array Length: ${routeCoordinates.length}`)
+                  if (routeCoordinates.length >= context.routeCoordinatesLimit) {
+                    coordsCopy = [...routeCoordinates]
+                    updateSessionCoords(coordsCopy)
+                    setRouteCoordinates([
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
+                  } else {
+                    setRouteCoordinates([
+                      ...routeCoordinates,
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
                   }
-                ])
+                }
               }}
               onRouteProgressChange={(event) => {
                 const {
@@ -273,7 +321,7 @@ const App = () => {
                 if (sessionId != null) {
                   endSession();
                 }
-                alert('Cancelled navigation event');
+                alert('Session ended');
               }}
               onArrive={() => {
                 // Called when you arrive at the destination.
