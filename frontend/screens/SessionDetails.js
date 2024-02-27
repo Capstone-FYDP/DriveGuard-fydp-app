@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   humanDateString,
@@ -8,10 +8,23 @@ import {
 import IconBadge from "../components/iconBadge/custom-iconBadge";
 import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "react-native-maps";
 import { MainContext } from "../context/MainContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
+import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
 
 const SessionDetails = ({ route, navigation }) => {
-  const { session } = route.params;
+  const { sessionId } = route.params;
   const context = useContext(MainContext);
+  const [session, setSession] = useState(null);
+  const [isLoading, setLoading] = useState(true);
+
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem("auth_token");
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const path = [
     { latitude: 43.47368, longitude: -80.54025 },
@@ -55,6 +68,44 @@ const SessionDetails = ({ route, navigation }) => {
     }
   };
 
+  const getSession = async () => {
+    try {
+      const token = await getToken();
+      console.log("Session Id: ", sessionId);
+
+      const response = await fetch(
+        context.fetchPath + `api/getSession/${sessionId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "x-access-tokens": token,
+          },
+        }
+      );
+
+      const json = await response.json();
+
+      if (json.message) {
+        Toast.show({
+          text1: "Error",
+          text2: json.message,
+          type: "error",
+        });
+      } else {
+        setSession(json.userSession);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getSession();
+  }, []);
+
   return (
     <View
       style={[styles.container, { backgroundColor: context.screenBackground }]}
@@ -77,85 +128,90 @@ const SessionDetails = ({ route, navigation }) => {
           </Text>
         </View>
       </View>
-
-      {session && (
+      {isLoading ? (
+        <LoadingIndicator isAnimating={true} />
+      ) : (
         <>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.mapStyle}
-            region={{
-              latitude: path[5].latitude,
-              longitude: path[5].longitude,
-              latitudeDelta: 0.007,
-              longitudeDelta: 0.007,
-            }}
-          >
-            <Marker
-              coordinate={{
-                latitude: path[0].latitude,
-                longitude: path[0].longitude,
-              }}
-            />
-            <Marker
-              coordinate={{
-                latitude: path[path.length - 1].latitude,
-                longitude: path[path.length - 1].longitude,
-              }}
-            />
-            <Polyline coordinates={path} strokeWidth={5} />
-          </MapView>
-          <View
-            style={[
-              styles.infoCardOuter,
-              { backgroundColor: context.screenBackground },
-            ]}
-          >
-            <View style={styles.attribute}>
-              <IconBadge
-                icon="calendar"
-                size={22}
-                library="AntDesign"
-                noTouchOpacity
-              />
-              <Text style={styles.infoCardInner}>
-                {humanDateString(new Date(session.startDate))} |{" "}
-                {humanTimeString(new Date(session.startDate))}
-              </Text>
-            </View>
-            <View style={styles.attribute}>
-              <IconBadge
-                icon="clockcircleo"
-                size={22}
-                library="AntDesign"
-                noTouchOpacity
-              />
-              <Text style={styles.infoCardInner}>
-                {session.status == "COMPLETED"
-                  ? getTimeDuration(session.startDate, session.endDate)
-                  : []}{" "}
-                min
-              </Text>
-            </View>
-            <View style={styles.attribute}>
-              <IconBadge
-                color={getIncidentColor(session.numOfIncidents)}
-                icon={getIncidentIcon(session.numOfIncidents)}
-                size={22}
-                library="AntDesign"
-                noTouchOpacity
-              />
-              <Text
+          {session && (
+            <>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={styles.mapStyle}
+                region={{
+                  latitude: path[5].latitude,
+                  longitude: path[5].longitude,
+                  latitudeDelta: 0.007,
+                  longitudeDelta: 0.007,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: path[0].latitude,
+                    longitude: path[0].longitude,
+                  }}
+                />
+                <Marker
+                  coordinate={{
+                    latitude: path[path.length - 1].latitude,
+                    longitude: path[path.length - 1].longitude,
+                  }}
+                />
+                <Polyline coordinates={path} strokeWidth={5} />
+              </MapView>
+              <View
                 style={[
-                  styles.attributeText,
-                  { color: getIncidentColor(session.numOfIncidents) },
+                  styles.infoCardOuter,
+                  { backgroundColor: context.screenBackground },
                 ]}
               >
-                {session.numOfIncidents}{" "}
-                {pluralize("Incident", session.numOfIncidents)}
-              </Text>
-            </View>
-            {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
-          </View>
+                <View style={styles.attribute}>
+                  <IconBadge
+                    icon="calendar"
+                    size={22}
+                    library="AntDesign"
+                    noTouchOpacity
+                  />
+                  <Text style={styles.infoCardInner}>
+                    {humanDateString(new Date(session.startDate))} |{" "}
+                    {humanTimeString(new Date(session.startDate))}
+                  </Text>
+                </View>
+                <View style={styles.attribute}>
+                  <IconBadge
+                    icon="clockcircleo"
+                    size={22}
+                    library="AntDesign"
+                    noTouchOpacity
+                  />
+                  <Text style={styles.infoCardInner}>
+                    {session.status == "COMPLETED"
+                      ? getTimeDuration(session.startDate, session.endDate)
+                      : []}{" "}
+                    min
+                  </Text>
+                </View>
+                <View style={styles.attribute}>
+                  <IconBadge
+                    color={getIncidentColor(session.numOfIncidents)}
+                    icon={getIncidentIcon(session.numOfIncidents)}
+                    size={22}
+                    library="AntDesign"
+                    noTouchOpacity
+                  />
+                  <Text
+                    style={[
+                      styles.attributeText,
+                      { color: getIncidentColor(session.numOfIncidents) },
+                    ]}
+                  >
+                    {session.numOfIncidents}{" "}
+                    {pluralize("Incident", session.numOfIncidents)}
+                  </Text>
+                </View>
+                {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
+              </View>
+            </>
+          )}
         </>
       )}
     </View>
