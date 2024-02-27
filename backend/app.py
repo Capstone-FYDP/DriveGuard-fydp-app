@@ -10,6 +10,7 @@ import base64
 import pickle
 import numpy as np
 import json
+import git
 import os
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -322,8 +323,8 @@ def updateCoords(current_user):
         list_coords = ""
         if userSession.coords:
             list_coords = userSession.coords
-            print(list_coords)
             userSession.coords = list_coords + ", " + deserializeCoords(data['coords'])
+            print(list_coords)
         else:
             userSession.coords = deserializeCoords(data['coords'])
 
@@ -433,10 +434,10 @@ def viewSession(current_user, sessionId):
     else:
         return jsonify(message= "Not a valid session")
 def deserializeCoords(coords):
-     return ', '.join([f"{x}:{y}" for x, y in coords])
+     return ', '.join([f"{x['latitude']}:{x['longitude']}" for x in coords])
 def serializeCoords(coord_string):
     pairs = coord_string.split(', ')
-    return [[pair.split(':')[0], pair.split(':')[1]] for pair in pairs]
+    return [{'latitude': pair.split(':')[0], 'longitude': pair.split(':')[1]} for pair in pairs]
 
 @app.route('/deploy_server', methods=['POST'])
 def deployServer():

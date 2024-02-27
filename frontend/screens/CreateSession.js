@@ -14,8 +14,11 @@ import { useIsFocused } from "@react-navigation/native";
 import { CardAnimationContext } from "@react-navigation/stack";
 import { toBase64 } from "../frame-processors/DistractedDrivingFrameProcessorPlugin";
 import * as Location from "expo-location";
-import { mapClassToLabel } from "../utils/string-utils";
-import MapboxNavigation from "rnc-mapbox-nav";
+import IconBadge from '../components/iconBadge/custom-iconBadge';
+import { capitalize } from 'validate.js';
+import { mapClassToLabel } from '../utils/string-utils';
+import MapboxNavigation from 'rnc-mapbox-nav';
+import { getDistance } from 'geolib';
 
 const App = ({ navigation }) => {
   const context = useContext(MainContext);
@@ -173,6 +176,25 @@ const App = ({ navigation }) => {
     }
   };
 
+  const updateSessionCoords = async (coords) => {
+    try {
+      const token = await getToken();
+      await fetch(context.fetchPath + `api/updateCoords`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
+        },
+        body: JSON.stringify({
+          "sessionId": sessionIdRef.current,
+          "coords": coords,
+        })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const createSession = async () => {
     setIncidentCoordinates([]);
     setRouteCoordinates([]);
@@ -200,7 +222,11 @@ const App = ({ navigation }) => {
   };
 
   const endSession = async () => {
-    Toast.hide();
+    Toast.hide()
+    if (routeCoordinatesRef.current.length > 0) {
+      coordsCopy = [...routeCoordinatesRef.current]
+      await updateSessionCoords(coordsCopy)
+    }
     try {
       const token = await getToken();
 
@@ -235,78 +261,104 @@ const App = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.createContainer}>
-      {isFocused && location && destination && (
-        <MapboxNavigation
-          origin={location}
-          destination={destination}
-          style={styles.mapStyle}
-          showsEndOfRouteFeedback
-          hideStatusView
-          onLocationChange={(event) => {
-            const { latitude, longitude } = event.nativeEvent;
-            // console.log('onLocationChange', event.nativeEvent);
-            setLocation([longitude, latitude]);
-            setRouteCoordinates([
-              ...routeCoordinates,
-              {
-                latitude: latitude,
-                longitude: longitude,
-              },
-            ]);
-          }}
-          onRouteProgressChange={(event) => {
-            const {
-              distanceTraveled,
-              durationRemaining,
-              fractionTraveled,
-              distanceRemaining,
-            } = event.nativeEvent;
-            // console.log('onRouteProgressChange', event.nativeEvent);
-          }}
-          onError={(event) => {
-            const { message } = event.nativeEvent;
-            if (sessionId != null) {
-              endSession();
-            }
-            alert(message);
-          }}
-          onCancelNavigation={() => {
-            // User tapped the "X" cancel button in the nav UI
-            // or canceled via the OS system tray on android.
-            // Do whatever you need to here.
-            if (sessionId != null) {
-              endSession();
-              alert("Cancelled navigation event");
-              navigation.navigate("SessionDetails", {
-                sessionId: sessionId,
-              });
-            }
-          }}
-          onArrive={() => {
-            // Called when you arrive at the destination.
-            if (sessionId != null) {
-              endSession();
-              alert("You have reached your destination");
-              navigation.navigate("SessionDetails", {
-                sessionId: sessionId,
-              });
-            }
-          }}
-        />
-      )}
-      {isFocused && device != null && hasCameraPermissions && (
-        <View style={styles.cameraStyle}>
-          <Camera
-            // ref={camera}
-            // photo={true}
-            isActive={true}
-            device={device}
-            style={styles.camera}
-            preset="cif-352x288"
-            frameProcessor={sessionId != null ? frameProcessor : null}
-          />
-        </View>
-      )}
+        {isFocused && location && destination &&
+          (
+            <MapboxNavigation
+              origin={location}
+              destination={destination}
+              style={styles.mapStyle}
+              showsEndOfRouteFeedback
+              hideStatusView
+              onLocationChange={(event) => {
+                const { latitude, longitude } = event.nativeEvent;
+                const distanceTravelled = getDistance(
+                  {
+                    latitude: location[1],
+                    longitude: location[0],
+                  },
+                  {
+                    latitude: latitude,
+                    longitude: longitude,
+                  },
+                )
+                console.log(`New coords: [$${latitude}, ${longitude}], Distance travelled: ${distanceTravelled}`)
+                if (distanceTravelled >= context.locationPollDistanceMetres) {
+                  setLocation([longitude, latitude])
+                  console.log(`Coordinates Array Length: ${routeCoordinates.length}`)
+                  if (routeCoordinates.length >= context.routeCoordinatesLimit) {
+                    coordsCopy = [...routeCoordinates]
+                    updateSessionCoords(coordsCopy)
+                    setRouteCoordinates([
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
+                  } else {
+                    setRouteCoordinates([
+                      ...routeCoordinates,
+                      {
+                        latitude: latitude,
+                        longitude: longitude,
+                      }
+                    ])
+                  }
+                }
+              }}
+              onRouteProgressChange={(event) => {
+                const {
+                  distanceTraveled,
+                  durationRemaining,
+                  fractionTraveled,
+                  distanceRemaining,
+                } = event.nativeEvent;
+                // console.log('onRouteProgressChange', event.nativeEvent);
+              }}
+              onError={(event) => {
+                const { message } = event.nativeEvent;
+                if (sessionId != null) {
+                  endSession();
+                }
+                alert(message);
+              }}
+              onCancelNavigation={() => {
+                // User tapped the "X" cancel button in the nav UI
+                // or canceled via the OS system tray on android.
+                // Do whatever you need to here.
+                if (sessionId != null) {
+                  endSession();
+                  alert('Session ended');
+                  navigation.navigate("SessionDetails", {
+                    sessionId: sessionId,
+                  });
+                }  
+              }}
+              onArrive={() => {
+                // Called when you arrive at the destination.
+                if (sessionId != null) {
+                  endSession();
+                  alert("You have reached your destination");
+                  navigation.navigate("SessionDetails", {
+                    sessionId: sessionId,
+                  });
+                }
+              }}
+            />
+          )
+        }
+        {isFocused && (device != null) && hasCameraPermissions &&
+          <View style={styles.cameraStyle}>
+            <Camera 
+              // ref={camera}
+              // photo={true}
+              isActive={true}
+              device={device}
+              style={styles.camera}
+              preset="cif-352x288"
+              frameProcessor={sessionId != null ? frameProcessor : null}
+            />
+          </View>
+        }
     </SafeAreaView>
   );
 };
