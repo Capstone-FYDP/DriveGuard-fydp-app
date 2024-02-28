@@ -99,7 +99,7 @@ class Session(db.Model):
     status = Column(String(50))
     numOfIncidents = Column(Integer)
     image_url  = Column(String)
-    coords = Column(Float)
+    coords = Column(String)
 
     
 @app.route("/api/validateToken", methods=['GET'])
@@ -437,7 +437,7 @@ def deserializeCoords(coords):
      return ', '.join([f"{x['latitude']}:{x['longitude']}" for x in coords])
 def serializeCoords(coord_string):
     pairs = coord_string.split(', ')
-    return [{'latitude': pair.split(':')[0], 'longitude': pair.split(':')[1]} for pair in pairs]
+    return [{'latitude': float(pair.split(':')[0]), 'longitude': float(pair.split(':')[1])} for pair in pairs]
 
 @app.route('/deploy_server', methods=['POST'])
 def deployServer():
