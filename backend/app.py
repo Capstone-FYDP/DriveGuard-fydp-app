@@ -87,8 +87,8 @@ class Incidents(db.Model):
     classification = Column(String(50))
     image_url = Column(String)
     session_id = Column(String)
-    long = Column(String)
-    lat = Column(String)
+    long = Column(Float)
+    lat = Column(Float)
 
 class Session(db.Model):
     id = Column(Integer, primary_key=True)
@@ -437,7 +437,7 @@ def deserializeCoords(coords):
      return ', '.join([f"{x['latitude']}:{x['longitude']}" for x in coords])
 def serializeCoords(coord_string):
     pairs = coord_string.split(', ')
-    return [{'latitude': pair.split(':')[0], 'longitude': pair.split(':')[1]} for pair in pairs]
+    return [{'latitude': float(pair.split(':')[0]), 'longitude': float(pair.split(':')[1])} for pair in pairs]
 
 @app.route('/deploy_server', methods=['POST'])
 def deployServer():
