@@ -6,6 +6,7 @@ import {
   runAtTargetFps,
 } from "react-native-vision-camera";
 import { StyleSheet, View, SafeAreaView } from "react-native";
+import Sound from 'react-native-sound';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import { MainContext } from "../context/MainContext";
@@ -51,6 +52,18 @@ const App = ({ navigation }) => {
   const device = devices.front;
   // const camera1 = useRef<Camera>(null)
   const [sessionDetails, setSessionDetails] = useState(null);
+  const [alertPlaying, setAlertPlaying] = useState(false);
+  const alertPlayingRef = useRef(alertPlaying)
+  alertPlayingRef.current = alertPlaying
+
+  const distractedAlertSound = new Sound("distracted_alert.mp3", Sound.MAIN_BUNDLE, (error) => {
+    if (error) {
+      console.log('failed to load the sound', error);
+      return
+    }
+    distractedAlertSound.setNumberOfLoops(-1)
+    console.log('duration in seconds: ' + distractedAlertSound.getDuration() + 'number of channels: ' + distractedAlertSound.getNumberOfChannels());
+  })
 
   useEffect(() => {
     (async () => {
@@ -108,7 +121,7 @@ const App = ({ navigation }) => {
     //setBase64(base64)
     classif = mapClassToLabel(classif);
     try {
-      if (classif != "Safe driving" && classif != classRef.current) {
+      if (classif != classRef.current) {
         setIncidentCoordinates([
           ...incidentCoordinatesRef.current,
           {
@@ -116,22 +129,37 @@ const App = ({ navigation }) => {
             longitude: locationRef.current[0],
           },
         ]);
+
         addIncident(classif, base64);
         setClassification(classif);
-        // Add an audio alert here
+        
         Toast.show({
           text1: classif,
           type: "error",
           autoHide: false,
         });
         ///////////////////////////
-      } else if (classif == "Safe driving") {
-        Toast.hide();
+      }
+      // Play distracted driving alert
+      if (!alertPlayingRef.current) {
+        setAlertPlaying(true)
+        distractedAlertSound.play()
+        setTimeout(() => {
+          distractedAlertSound.stop(() => {
+            setAlertPlaying(false)
+          })
+        }, 5000)
       }
     } catch (error) {
       console.error(error);
     }
   };
+  const resetClassification = async () => {
+    setClassification("")
+    Toast.hide();
+  };
+
+  const resetClassificationJS = Worklets.createRunInJsFn(resetClassification);
   const processFrameJS = Worklets.createRunInJsFn(processFrame);
 
   const frameProcessor = useFrameProcessor(
@@ -145,13 +173,20 @@ const App = ({ navigation }) => {
         console.log(`Image Processor and Classifier RTT: ${end - cur}ms`);
         if (result[0] != null) {
           console.log(result[0]);
+          resetClassificationJS();
         } else if (result[1] != null) {
           console.log(`class: ${result[1]}, score: ${result[2]}`);
-          processFrameJS(result[1], result[3]);
+          if (result[1] == 'c0') {
+            resetClassificationJS();
+          } else {
+            processFrameJS(result[1], result[3]);
+          }
+        } else {
+          resetClassificationJS();
         }
       });
     },
-    [processFrameJS]
+    [processFrameJS, resetClassificationJS]
   );
 
   const addIncident = async (classification, base64) => {
