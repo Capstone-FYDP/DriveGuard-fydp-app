@@ -159,40 +159,45 @@ const Home = () => {
         <FlatList
           ListHeaderComponent={
             <>
-              <View style={styles.graphContainer}>
-                <Text
-                  style={[styles.graphTitle, { color: context.primaryColour }]}
-                >
-                  {`Your last ${pastDays} trips`}
-                </Text>
-                <LineChart
-                  data={{
-                    datasets: [
-                      {
-                        data: graphData,
+              {graphData.length > 0 && (
+                <View style={styles.graphContainer}>
+                  <Text
+                    style={[
+                      styles.graphTitle,
+                      { color: context.primaryColour },
+                    ]}
+                  >
+                    {`Your last ${pastDays} trips`}
+                  </Text>
+                  <LineChart
+                    data={{
+                      datasets: [
+                        {
+                          data: graphData,
+                        },
+                      ],
+                    }}
+                    width={screenWidth * 0.9}
+                    height={220}
+                    yAxisInterval={10}
+                    chartConfig={{
+                      backgroundGradientFrom: context.screenBackground,
+                      backgroundGradientTo: context.screenBackground,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
+                      labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
+                      propsForDots: {
+                        r: "0",
+                        strokeWidth: "1",
+                        stroke: context.tertiaryColour,
                       },
-                    ],
-                  }}
-                  width={screenWidth * 0.9}
-                  height={220}
-                  yAxisInterval={10}
-                  chartConfig={{
-                    backgroundGradientFrom: context.screenBackground,
-                    backgroundGradientTo: context.screenBackground,
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(44, 121, 179, 0.75)`,
-                    labelColor: (opacity = 1) => `rgba(31, 82, 123, 1)`,
-                    propsForDots: {
-                      r: "0",
-                      strokeWidth: "1",
-                      stroke: context.tertiaryColour,
-                    },
-                  }}
-                  bezier
-                  segments={4}
-                  fromZero
-                />
-              </View>
+                    }}
+                    bezier
+                    segments={4}
+                    fromZero
+                  />
+                </View>
+              )}
               <CustomCard
                 outerStyle={[
                   styles.infoCardOuter,

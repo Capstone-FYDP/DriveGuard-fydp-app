@@ -120,7 +120,7 @@ const MySessions = ({ navigation }) => {
                     numOfIncidents={item.numOfIncidents}
                     onPress={() =>
                       navigation.navigate("SessionDetails", {
-                        session: item,
+                        sessionId: item.session_id,
                       })
                     }
                   />
