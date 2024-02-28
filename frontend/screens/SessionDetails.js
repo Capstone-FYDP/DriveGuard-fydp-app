@@ -74,7 +74,6 @@ const SessionDetails = ({ route, navigation }) => {
   const getIncidents = async () => {
     try {
       const token = await getToken();
-      // TODO: left it as getIncidents for now to test UI functionality with existing incidents, change later:
       const response = await fetch(
         context.fetchPath + `api/getIncidents/${session.session_id}`,
         {
