@@ -69,8 +69,6 @@ const SessionDetails = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -117,15 +115,18 @@ const SessionDetails = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (isFocused) {
-      getSession();
-      getIncidents();
+      async function fetchSessionIncidentsData() {
+        await getSession();
+        await getIncidents();
+        setLoading(false);
+      }
+
+      fetchSessionIncidentsData();
     }
   }, [isFocused]);
 
