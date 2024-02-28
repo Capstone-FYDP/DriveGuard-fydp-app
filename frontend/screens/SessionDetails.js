@@ -28,6 +28,7 @@ const SessionDetails = ({ route, navigation }) => {
   const context = useContext(MainContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [incidentImage, setIncidentImage] = useState('');
+  const [coords, setCoords] = useState([]);
 
   const isFocused = useIsFocused();
 
@@ -39,54 +40,36 @@ const SessionDetails = ({ route, navigation }) => {
     }
   };
 
-  // const getSession = async () => {
-  //   try {
-  //     const token = await getToken();
-  //     const response = await fetch(
-  //       context.fetchPath + `api/getSession/${session.session_id}`,
-  //       {
-  //         method: 'GET',
-  //         headers: {
-  //           'Content-Type': 'application/json',
-  //           'x-access-tokens': token,
-  //         },
-  //       }
-  //     );
-  //     const json = await response.json();
+  const getSession = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        context.fetchPath + `api/getSession/${session.session_id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
+      const json = await response.json();
 
-  //     if (json.message) {
-  //       Toast.show({
-  //         text1: 'Error',
-  //         text2: json.message,
-  //         type: 'error',
-  //       });
-  //     } else {
-  //       setSessions(
-  //         json.sessionData
-  //           .map((item) => {
-  //             return {
-  //               ...item,
-  //               startDate: new Date(item.startDate),
-  //               endDate: new Date(item.endDate),
-  //             };
-  //           })
-  //           .sort((a, b) => {
-  //             // Put whatevers active at the top first
-  //             if (a.status == 'ACTIVE' && b.status != 'ACTIVE') return 1;
-  //             if (a.status != 'ACTIVE' && b.status == 'ACTIVE') return -1;
-  //             // Sort in descending order from latest to oldest
-  //             if (a.status == 'ACTIVE' && b.status == 'ACTIVE')
-  //               return a.startDate - b.startDate;
-  //             return a.endDate - b.endDate;
-  //           })
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      if (json.message) {
+        Toast.show({
+          text1: 'Error',
+          text2: json.message,
+          type: 'error',
+        });
+      } else {
+        setCoords(json.coords);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getIncidents = async () => {
     try {
@@ -109,6 +92,25 @@ const SessionDetails = ({ route, navigation }) => {
         });
       } else {
         setIncidents(
+          json.incidentData
+            .map((item) => {
+              return {
+                ...item,
+                classification: item.classification,
+              };
+            })
+            .sort((a, b) => {
+              const dateA = a.date;
+              const dateB = b.date;
+
+              if (dateA > dateB) {
+                return -1;
+              }
+              return 1;
+            })
+        );
+
+        console.log(
           json.incidentData
             .map((item) => {
               return {
@@ -183,9 +185,7 @@ const SessionDetails = ({ route, navigation }) => {
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: context.screenBackground }]}
-    >
+    <>
       <Modal
         animationType='fade'
         transparent
@@ -198,7 +198,11 @@ const SessionDetails = ({ route, navigation }) => {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Image
-              style={{ width: '100%', height: 200, resizeMode: 'stretch' }}
+              style={{
+                width: '100%',
+                height: 200,
+                resizeMode: 'stretch',
+              }}
               source={{
                 uri: incidentImage,
               }}
@@ -212,133 +216,157 @@ const SessionDetails = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
-      <View style={styles.upperContainer}>
-        <View style={styles.textWrapper}>
-          <View style={{ marginRight: 20 }}>
-            <IconBadge
-              icon='arrowleft'
-              size={30}
-              library='AntDesign'
-              noTouchOpacity
-              onPress={() => navigation.navigate('Trips')}
-            />
-          </View>
-          <Text
-            style={[styles.headerTitle, { color: context.secondaryColour }]}
-          >
-            Trip Details
-          </Text>
-        </View>
-      </View>
-
-      {session && (
+      {session.numOfIncidents != 0 ? (
         <>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.mapStyle}
-            region={{
-              latitude: path[5].latitude,
-              longitude: path[5].longitude,
-              latitudeDelta: 0.007,
-              longitudeDelta: 0.007,
-            }}
-          >
-            <Marker
-              coordinate={{
-                latitude: path[0].latitude,
-                longitude: path[0].longitude,
-              }}
-            />
-            <Marker
-              coordinate={{
-                latitude: path[path.length - 1].latitude,
-                longitude: path[path.length - 1].longitude,
-              }}
-            />
-            <Polyline coordinates={path} strokeWidth={5} />
-          </MapView>
-          <View
-            style={[
-              styles.infoCardOuter,
-              { backgroundColor: context.screenBackground },
-            ]}
-          >
-            <View style={styles.attribute}>
-              <IconBadge
-                icon='calendar'
-                size={22}
-                library='AntDesign'
-                noTouchOpacity
-              />
-              <Text style={styles.infoCardInner}>
-                {humanDateString(new Date(session.startDate))} |{' '}
-                {humanTimeString(new Date(session.startDate))}
-              </Text>
-            </View>
-            <View style={styles.attribute}>
-              <IconBadge
-                icon='clockcircleo'
-                size={22}
-                library='AntDesign'
-                noTouchOpacity
-              />
-              <Text style={styles.infoCardInner}>
-                {session.status == 'COMPLETED'
-                  ? getTimeDuration(session.startDate, session.endDate)
-                  : []}{' '}
-                min
-              </Text>
-            </View>
-            <View style={styles.attribute}>
-              <IconBadge
-                color={getIncidentColor(session.numOfIncidents)}
-                icon={getIncidentIcon(session.numOfIncidents)}
-                size={22}
-                library='AntDesign'
-                noTouchOpacity
-              />
-              <Text
-                style={[
-                  styles.attributeText,
-                  { color: getIncidentColor(session.numOfIncidents) },
-                ]}
-              >
-                {session.numOfIncidents}{' '}
-                {pluralize('Incident', session.numOfIncidents)}
-              </Text>
-            </View>
-            {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
-            <View style={styles.incidentsView}>
-              {session.numOfIncidents == 0 ? (
+          <View style={styles.flatListContainer}>
+            <FlatList
+              ListHeaderComponent={
                 <>
-                  <Text style={styles.incidentsTitle}>List of Incidents</Text>
-                  <View style={styles.flatListContainer}>
-                    <FlatList
-                      data={incidents}
-                      renderItem={({ item }) => {
-                        return (
-                          <View style={styles.incidentButtonStyle}>
-                            <Button
-                              onPress={() => {
-                                setModalVisible(true);
-                                setIncidentImage(item.uri);
-                              }}
-                              title={item.classification}
-                            ></Button>
+                  <View
+                    style={[
+                      styles.container,
+                      { backgroundColor: context.screenBackground },
+                    ]}
+                  >
+                    <View style={styles.upperContainer}>
+                      <View style={styles.textWrapper}>
+                        <View style={{ marginRight: 20 }}>
+                          <IconBadge
+                            icon='arrowleft'
+                            size={30}
+                            library='AntDesign'
+                            noTouchOpacity
+                            onPress={() => navigation.navigate('Trips')}
+                          />
+                        </View>
+                        <Text
+                          style={[
+                            styles.headerTitle,
+                            { color: context.secondaryColour },
+                          ]}
+                        >
+                          Trip Details
+                        </Text>
+                      </View>
+                    </View>
+
+                    {session && (
+                      <>
+                        <MapView
+                          provider={PROVIDER_GOOGLE}
+                          style={styles.mapStyle}
+                          region={{
+                            latitude: path[5].latitude,
+                            longitude: path[5].longitude,
+                            latitudeDelta: 0.007,
+                            longitudeDelta: 0.007,
+                          }}
+                        >
+                          <Marker
+                            coordinate={{
+                              latitude: path[0].latitude,
+                              longitude: path[0].longitude,
+                            }}
+                          />
+                          <Marker
+                            coordinate={{
+                              latitude: path[path.length - 1].latitude,
+                              longitude: path[path.length - 1].longitude,
+                            }}
+                          />
+                          <Polyline coordinates={path} strokeWidth={5} />
+                        </MapView>
+                        <View
+                          style={[
+                            styles.infoCardOuter,
+                            { backgroundColor: context.screenBackground },
+                          ]}
+                        >
+                          <View style={styles.attribute}>
+                            <IconBadge
+                              icon='calendar'
+                              size={22}
+                              library='AntDesign'
+                              noTouchOpacity
+                            />
+                            <Text style={styles.infoCardInner}>
+                              {humanDateString(new Date(session.startDate))} |{' '}
+                              {humanTimeString(new Date(session.startDate))}
+                            </Text>
                           </View>
-                        );
-                      }}
-                    />
+                          <View style={styles.attribute}>
+                            <IconBadge
+                              icon='clockcircleo'
+                              size={22}
+                              library='AntDesign'
+                              noTouchOpacity
+                            />
+                            <Text style={styles.infoCardInner}>
+                              {session.status == 'COMPLETED'
+                                ? getTimeDuration(
+                                    session.startDate,
+                                    session.endDate
+                                  )
+                                : []}{' '}
+                              min
+                            </Text>
+                          </View>
+                          <View style={styles.attribute}>
+                            <IconBadge
+                              color={getIncidentColor(session.numOfIncidents)}
+                              icon={getIncidentIcon(session.numOfIncidents)}
+                              size={22}
+                              library='AntDesign'
+                              noTouchOpacity
+                            />
+                            <Text
+                              style={[
+                                styles.attributeText,
+                                {
+                                  color: getIncidentColor(
+                                    session.numOfIncidents
+                                  ),
+                                },
+                              ]}
+                            >
+                              {session.numOfIncidents}{' '}
+                              {pluralize('Incident', session.numOfIncidents)}
+                            </Text>
+                          </View>
+                          {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
+                          {/* <View style={styles.incidentsView}> */}
+                        </View>
+                        {/* </View> */}
+                      </>
+                    )}
                   </View>
+                  <Text style={styles.incidentsTitle}>List of Incidents</Text>
                 </>
-              ) : (
-                <></>
-              )}
-            </View>
+              }
+              data={incidents}
+              renderItem={({ item }) => {
+                return (
+                  <>
+                    <View style={styles.incidentButtonStyle}>
+                      <Button
+                        onPress={() => {
+                          setModalVisible(true);
+                          setIncidentImage(item.uri);
+                        }}
+                        title={item.classification}
+                      ></Button>
+                    </View>
+                    <View style={{ height: 20 }} />
+                  </>
+                );
+              }}
+            />
           </View>
         </>
+      ) : (
+        <></>
       )}
-    </View>
+    </>
   );
 };
 
@@ -376,17 +404,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3f2021',
   },
-  flatListContainer: {
-    flex: 1,
-    width: '85%',
-    justifyContent: 'space-around',
-    alignSelf: 'center',
-  },
   infoCardOuter: {
     marginVertical: 5,
     padding: 15,
-    borderRadius: 10,
-    alignSelf: 'center',
+    // borderRadius: 10,
+    alignSelf: 'flex-start',
+    backgroundColor: 'white',
   },
   infoCardInner: {
     display: 'flex',
@@ -442,13 +465,13 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     flex: 1,
-    flexGrow: 1,
     width: '85%',
     justifyContent: 'space-around',
     alignSelf: 'center',
   },
   incidentButtonStyle: {
-    padding: 8,
+    paddingLeft: 8,
+    paddingRight: 8,
   },
   hideButtonStyle: {
     marginTop: 19,
