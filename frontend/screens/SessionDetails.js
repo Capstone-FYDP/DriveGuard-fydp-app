@@ -75,13 +75,16 @@ const SessionDetails = ({ route, navigation }) => {
     try {
       const token = await getToken();
       // TODO: left it as getIncidents for now to test UI functionality with existing incidents, change later:
-      const response = await fetch(context.fetchPath + `api/getIncidents`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-tokens': token,
-        },
-      });
+      const response = await fetch(
+        context.fetchPath + `api/getIncidents/${session.session_id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
+          },
+        }
+      );
       const json = await response.json();
 
       if (json.message) {
@@ -92,25 +95,6 @@ const SessionDetails = ({ route, navigation }) => {
         });
       } else {
         setIncidents(
-          json.incidentData
-            .map((item) => {
-              return {
-                ...item,
-                classification: item.classification,
-              };
-            })
-            .sort((a, b) => {
-              const dateA = a.date;
-              const dateB = b.date;
-
-              if (dateA > dateB) {
-                return -1;
-              }
-              return 1;
-            })
-        );
-
-        console.log(
           json.incidentData
             .map((item) => {
               return {
