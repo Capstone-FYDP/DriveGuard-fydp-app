@@ -20,16 +20,17 @@ import { MainContext } from '../context/MainContext';
 import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
 
 const SessionDetails = ({ route, navigation }) => {
-  const { session } = route.params;
+  const { sessionId } = route.params;
   const [incidents, setIncidents] = useState([]);
   const [isLoading, setLoading] = useState(true);
   const context = useContext(MainContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [incidentImage, setIncidentImage] = useState('');
   const [coords, setCoords] = useState([]);
-
+  const [session, setSession] = useState(null);
   const isFocused = useIsFocused();
 
   const getToken = async () => {
@@ -43,8 +44,9 @@ const SessionDetails = ({ route, navigation }) => {
   const getSession = async () => {
     try {
       const token = await getToken();
+      console.log('session ID:', sessionId);
       const response = await fetch(
-        context.fetchPath + `api/getSession/${session.session_id}`,
+        context.fetchPath + `api/getSession/${sessionId}`,
         {
           method: 'GET',
           headers: {
@@ -62,7 +64,8 @@ const SessionDetails = ({ route, navigation }) => {
           type: 'error',
         });
       } else {
-        setCoords(json.coords);
+        setSession(json.userSession);
+        setCoords(json.userSession.coords);
       }
     } catch (error) {
       console.error(error);
@@ -75,7 +78,7 @@ const SessionDetails = ({ route, navigation }) => {
     try {
       const token = await getToken();
       const response = await fetch(
-        context.fetchPath + `api/getIncidents/${session.session_id}`,
+        context.fetchPath + `api/getIncidents/${sessionId}`,
         {
           method: 'GET',
           headers: {
@@ -121,6 +124,7 @@ const SessionDetails = ({ route, navigation }) => {
 
   useEffect(() => {
     if (isFocused) {
+      getSession();
       getIncidents();
     }
   }, [isFocused]);
@@ -199,66 +203,67 @@ const SessionDetails = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
-      {session.numOfIncidents != 0 ? (
-        <>
-          <View style={styles.flatListContainer}>
-            <FlatList
-              ListHeaderComponent={
-                <>
-                  <View
-                    style={[
-                      styles.container,
-                      { backgroundColor: context.screenBackground },
-                    ]}
-                  >
-                    <View style={styles.upperContainer}>
-                      <View style={styles.textWrapper}>
-                        <View style={{ marginRight: 20 }}>
-                          <IconBadge
-                            icon='arrowleft'
-                            size={30}
-                            library='AntDesign'
-                            noTouchOpacity
-                            onPress={() => navigation.navigate('Trips')}
-                          />
-                        </View>
-                        <Text
-                          style={[
-                            styles.headerTitle,
-                            { color: context.secondaryColour },
-                          ]}
-                        >
-                          Trip Details
-                        </Text>
-                      </View>
-                    </View>
-
-                    {session && (
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: context.screenBackground },
+        ]}
+      >
+        <View style={styles.upperContainer}>
+          <View style={styles.textWrapper}>
+            <View style={{ marginRight: 20 }}>
+              <IconBadge
+                icon='arrowleft'
+                size={30}
+                library='AntDesign'
+                noTouchOpacity
+                onPress={() => navigation.navigate('Trips')}
+              />
+            </View>
+            <Text
+              style={[styles.headerTitle, { color: context.secondaryColour }]}
+            >
+              Trip Details
+            </Text>
+          </View>
+        </View>
+        {isLoading ? (
+          <LoadingIndicator isAnimating={true} />
+        ) : (
+          <>
+            {session && (
+              <>
+                <View style={styles.flatListContainer}>
+                  <FlatList
+                    ListHeaderComponent={
                       <>
-                        <MapView
-                          provider={PROVIDER_GOOGLE}
-                          style={styles.mapStyle}
-                          region={{
-                            latitude: path[5].latitude,
-                            longitude: path[5].longitude,
-                            latitudeDelta: 0.007,
-                            longitudeDelta: 0.007,
-                          }}
-                        >
-                          <Marker
-                            coordinate={{
-                              latitude: path[0].latitude,
-                              longitude: path[0].longitude,
+                        {coords && coords.length > 0 && (
+                          <MapView
+                            provider={PROVIDER_GOOGLE}
+                            style={styles.mapStyle}
+                            region={{
+                              latitude: coords[0].latitude,
+                              longitude: coords[0].longitude,
+                              latitudeDelta: 0.007,
+                              longitudeDelta: 0.007,
                             }}
-                          />
-                          <Marker
-                            coordinate={{
-                              latitude: path[path.length - 1].latitude,
-                              longitude: path[path.length - 1].longitude,
-                            }}
-                          />
-                          <Polyline coordinates={path} strokeWidth={5} />
-                        </MapView>
+                          >
+                            <Marker
+                              coordinate={{
+                                latitude: coords[0].latitude,
+                                longitude: coords[0].longitude,
+                              }}
+                            />
+                            <Marker
+                              coordinate={{
+                                latitude: coords[coords.length - 1].latitude,
+                                longitude: coords[coords.length - 1].longitude,
+                              }}
+                            />
+                            <Polyline coordinates={coords} strokeWidth={5} />
+                          </MapView>
+                        )}
+
                         <View
                           style={[
                             styles.infoCardOuter,
@@ -296,8 +301,8 @@ const SessionDetails = ({ route, navigation }) => {
                           </View>
                           <View style={styles.attribute}>
                             <IconBadge
-                              color={getIncidentColor(session.numOfIncidents)}
-                              icon={getIncidentIcon(session.numOfIncidents)}
+                              color={getIncidentColor(incidents.length)}
+                              icon={getIncidentIcon(incidents.length)}
                               size={22}
                               library='AntDesign'
                               noTouchOpacity
@@ -306,49 +311,47 @@ const SessionDetails = ({ route, navigation }) => {
                               style={[
                                 styles.attributeText,
                                 {
-                                  color: getIncidentColor(
-                                    session.numOfIncidents
-                                  ),
+                                  color: getIncidentColor(incidents.length),
                                 },
                               ]}
                             >
-                              {session.numOfIncidents}{' '}
-                              {pluralize('Incident', session.numOfIncidents)}
+                              {incidents.length}{' '}
+                              {pluralize('Incident', incidents.length)}
                             </Text>
                           </View>
-                          {/* <Text style={styles.infoCardInner}>Distance: 15 km</Text> */}
-                          {/* <View style={styles.incidentsView}> */}
                         </View>
-                        {/* </View> */}
+
+                        {incidents.length > 0 && (
+                          <Text style={styles.incidentsTitle}>
+                            List of Incidents
+                          </Text>
+                        )}
                       </>
-                    )}
-                  </View>
-                  <Text style={styles.incidentsTitle}>List of Incidents</Text>
-                </>
-              }
-              data={incidents}
-              renderItem={({ item }) => {
-                return (
-                  <>
-                    <View style={styles.incidentButtonStyle}>
-                      <Button
-                        onPress={() => {
-                          setModalVisible(true);
-                          setIncidentImage(item.uri);
-                        }}
-                        title={item.classification}
-                      ></Button>
-                    </View>
-                    <View style={{ height: 20 }} />
-                  </>
-                );
-              }}
-            />
-          </View>
-        </>
-      ) : (
-        <></>
-      )}
+                    }
+                    data={incidents}
+                    renderItem={({ item }) => {
+                      return (
+                        <>
+                          <View style={styles.incidentButtonStyle}>
+                            <Button
+                              onPress={() => {
+                                setModalVisible(true);
+                                setIncidentImage(item.uri);
+                              }}
+                              title={item.classification}
+                            ></Button>
+                          </View>
+                          <View style={{ height: 20 }} />
+                        </>
+                      );
+                    }}
+                  />
+                </View>
+              </>
+            )}
+          </>
+        )}
+      </View>
     </>
   );
 };
@@ -391,8 +394,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     padding: 15,
     // borderRadius: 10,
-    alignSelf: 'flex-start',
-    backgroundColor: 'white',
+    alignSelf: 'center',
   },
   infoCardInner: {
     display: 'flex',
@@ -447,7 +449,6 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   flatListContainer: {
-    flex: 1,
     width: '85%',
     justifyContent: 'space-around',
     alignSelf: 'center',
