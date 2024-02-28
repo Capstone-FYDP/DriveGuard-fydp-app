@@ -87,8 +87,8 @@ class Incidents(db.Model):
     classification = Column(String(50))
     image_url = Column(String)
     session_id = Column(String)
-    long = Column(String)
-    lat = Column(String)
+    long = Column(Float)
+    lat = Column(Float)
 
 class Session(db.Model):
     id = Column(Integer, primary_key=True)
@@ -99,7 +99,7 @@ class Session(db.Model):
     status = Column(String(50))
     numOfIncidents = Column(Integer)
     image_url  = Column(String)
-    coords = Column(String)
+    coords = Column(Float)
 
     
 @app.route("/api/validateToken", methods=['GET'])
