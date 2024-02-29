@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 10,
   },
   infoCardOuter: {
-    width: "100%",
+    width: "90%",
     borderRadius: 20,
     alignSelf: "center",
   },

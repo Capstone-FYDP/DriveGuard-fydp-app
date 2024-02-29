@@ -66,6 +66,7 @@ const Home = () => {
       } else {
         //get the most recent sessions
         const pastSessions = json.sessionData
+          .reverse()
           .map((item) => {
             return item.numOfIncidents;
           })
@@ -167,7 +168,7 @@ const Home = () => {
                       { color: context.primaryColour },
                     ]}
                   >
-                    {`Your last ${pastDays} trips`}
+                    {`Incidents of your last ${pastDays} trips`}
                   </Text>
                   <LineChart
                     data={{
