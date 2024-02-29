@@ -6,6 +6,7 @@ import AuthenticationScreens from "./screens/authenticationScreens/exportAuthent
 import CustomToastAlert from "./components/alerts/custom-toast-alert";
 import { useFonts } from "expo-font";
 import SessionDetails from "./screens/SessionDetails";
+import StartNewSession from "./screens/CreateSession";
 
 export default function MainCode() {
   const [loaded] = useFonts({
@@ -32,6 +33,11 @@ export default function MainCode() {
               options={{ headerShown: false }}
               name="SessionDetails"
               component={SessionDetails}
+            ></Stack.Screen>
+            <Stack.Screen
+              options={{ headerShown: false }}
+              name="StartSession"
+              component={StartNewSession}
             ></Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>

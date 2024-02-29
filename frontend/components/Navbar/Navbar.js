@@ -5,7 +5,8 @@ import MySessions from "../../screens/MySessions";
 import CreateSession from "../../screens/CreateSession";
 import Profile from "../../screens/Profile";
 import CustomTabBar from "./CustomTabBar";
-import SessionDetails from '../../screens/SessionDetails';
+import SessionDetails from "../../screens/SessionDetails";
+import AddressForm from "../../screens/AddressForm";
 
 const Tab = createBottomTabNavigator();
 
@@ -27,7 +28,7 @@ const Navbar = () => {
       <Tab.Screen
         options={{ headerShown: false }}
         name="Create"
-        component={CreateSession}
+        component={AddressForm}
         initialParams={{ icon: "add-circle" }}
       />
       <Tab.Screen
