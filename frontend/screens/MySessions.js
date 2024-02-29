@@ -46,8 +46,8 @@ const MySessions = ({ navigation }) => {
             .map((item) => {
               return {
                 ...item,
-                startDate: new Date(item.startDate),
-                endDate: new Date(item.endDate),
+                startDate: new Date(item.startDate + "Z"),
+                endDate: new Date(item.endDate + "Z"),
               };
             })
             .sort((a, b) => {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   flatListContainer: {
     flex: 1,
-    width: "85%",
+    width: "100%",
     justifyContent: "space-around",
     alignSelf: "center",
   },

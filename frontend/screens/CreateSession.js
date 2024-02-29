@@ -6,7 +6,7 @@ import {
   runAtTargetFps,
 } from "react-native-vision-camera";
 import { StyleSheet, View, SafeAreaView } from "react-native";
-import Sound from 'react-native-sound';
+import Sound from "react-native-sound";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 import { MainContext } from "../context/MainContext";
@@ -54,21 +54,30 @@ const StartNewSession = ({ route, navigation }) => {
   // const camera1 = useRef<Camera>(null)
   const [sessionDetails, setSessionDetails] = useState(null);
   const [alertPlaying, setAlertPlaying] = useState(false);
-  const alertPlayingRef = useRef(alertPlaying)
-  alertPlayingRef.current = alertPlaying
+  const alertPlayingRef = useRef(alertPlaying);
+  alertPlayingRef.current = alertPlaying;
 
   const distractedAlertSound = useRef();
 
   useEffect(() => {
-    distractedAlertSound.current = new Sound("distracted_alert.mp3", Sound.MAIN_BUNDLE, (error) => {
-      if (error) {
-        console.log('failed to load the sound', error);
-        return
+    distractedAlertSound.current = new Sound(
+      "distracted_alert.mp3",
+      Sound.MAIN_BUNDLE,
+      (error) => {
+        if (error) {
+          console.log("failed to load the sound", error);
+          return;
+        }
+        distractedAlertSound.current.setNumberOfLoops(-1);
+        console.log(
+          "duration in seconds: " +
+            distractedAlertSound.current.getDuration() +
+            "number of channels: " +
+            distractedAlertSound.current.getNumberOfChannels()
+        );
       }
-      distractedAlertSound.current.setNumberOfLoops(-1)
-      console.log('duration in seconds: ' + distractedAlertSound.current.getDuration() + 'number of channels: ' + distractedAlertSound.current.getNumberOfChannels());
-    })
-  }, [])
+    );
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -137,7 +146,7 @@ const StartNewSession = ({ route, navigation }) => {
 
         addIncident(classif, base64);
         setClassification(classif);
-        
+
         Toast.show({
           text1: classif,
           type: "error",
@@ -147,20 +156,20 @@ const StartNewSession = ({ route, navigation }) => {
       }
       // Play distracted driving alert
       if (!alertPlayingRef.current) {
-        setAlertPlaying(true)
-        distractedAlertSound.current.play()
+        setAlertPlaying(true);
+        distractedAlertSound.current.play();
         setTimeout(() => {
           distractedAlertSound.current.stop(() => {
-            setAlertPlaying(false)
-          })
-        }, 5000)
+            setAlertPlaying(false);
+          });
+        }, 5000);
       }
     } catch (error) {
       console.error(error);
     }
   };
   const resetClassification = async () => {
-    setClassification("")
+    setClassification("");
     Toast.hide();
   };
 
@@ -170,7 +179,7 @@ const StartNewSession = ({ route, navigation }) => {
   const frameProcessor = useFrameProcessor(
     (frame) => {
       "worklet";
-      runAtTargetFps(2, () => {
+      runAtTargetFps(1, () => {
         "worklet";
         let cur = new Date();
         const result = toBase64(frame);
@@ -181,7 +190,7 @@ const StartNewSession = ({ route, navigation }) => {
           resetClassificationJS();
         } else if (result[1] != null) {
           console.log(`class: ${result[1]}, score: ${result[2]}`);
-          if (result[1] == 'c0') {
+          if (result[1] == "c0") {
             resetClassificationJS();
           } else {
             processFrameJS(result[1], result[3]);
@@ -293,6 +302,9 @@ const StartNewSession = ({ route, navigation }) => {
       } else {
         console.log("end session is called!");
         setSessionId(null);
+        navigation.navigate("SessionDetails", {
+          sessionId: sessionId,
+        });
       }
     } catch (error) {
       console.error(error);
@@ -362,7 +374,6 @@ const StartNewSession = ({ route, navigation }) => {
             if (sessionId != null) {
               endSession();
             }
-            alert(message);
           }}
           onCancelNavigation={() => {
             // User tapped the "X" cancel button in the nav UI
@@ -370,10 +381,6 @@ const StartNewSession = ({ route, navigation }) => {
             // Do whatever you need to here.
             if (sessionId != null) {
               endSession();
-              alert("Session ended");
-              navigation.navigate("SessionDetails", {
-                sessionId: sessionId,
-              });
             }
           }}
           onArrive={() => {
@@ -381,9 +388,6 @@ const StartNewSession = ({ route, navigation }) => {
             if (sessionId != null) {
               endSession();
               alert("You have reached your destination");
-              navigation.navigate("SessionDetails", {
-                sessionId: sessionId,
-              });
             }
           }}
         />

@@ -10,6 +10,7 @@ import {
   Button,
 } from 'react-native';
 import {
+  convertUTCToLocal,
   humanDateString,
   humanTimeString,
   pluralize,
@@ -21,6 +22,8 @@ import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import CustomCard from '../components/card/custom-card';
+import CustomButton from '../components/button/custom-button';
 
 const SessionDetails = ({ route, navigation }) => {
   const { sessionId } = route.params;
@@ -32,6 +35,7 @@ const SessionDetails = ({ route, navigation }) => {
   const [coords, setCoords] = useState([]);
   const [session, setSession] = useState(null);
   const isFocused = useIsFocused();
+  const [sessions, setSessions] = useState([]);
 
   const getToken = async () => {
     try {
@@ -106,7 +110,7 @@ const SessionDetails = ({ route, navigation }) => {
               const dateA = a.date;
               const dateB = b.date;
 
-              if (dateA > dateB) {
+              if (dateA < dateB) {
                 return -1;
               }
               return 1;
@@ -130,19 +134,9 @@ const SessionDetails = ({ route, navigation }) => {
     }
   }, [isFocused]);
 
-  const path = [
-    { latitude: 43.47368, longitude: -80.54025 },
-    { latitude: 43.47407, longitude: -80.53903 },
-    { latitude: 43.47442, longitude: -80.53809 },
-    { latitude: 43.474309, longitude: -80.53794 },
-    { latitude: 43.475107, longitude: -80.53851 },
-    { latitude: 43.475628, longitude: -80.53889 },
-    { latitude: 43.476002, longitude: -80.53917 },
-  ];
-
   const getTimeDuration = (startDate, endDate) => {
-    let start = new Date(startDate);
-    let end = new Date(endDate);
+    let start = new Date(startDate + 'Z');
+    let end = new Date(endDate + 'Z');
     const totalMin = Math.abs(start.getTime() - end.getTime()) / (1000 * 60);
 
     const hours = totalMin / 60;
@@ -190,16 +184,18 @@ const SessionDetails = ({ route, navigation }) => {
                 width: '100%',
                 height: 200,
                 resizeMode: 'stretch',
+                borderRadius: 20,
               }}
               source={{
                 uri: incidentImage,
               }}
             />
             <View style={styles.hideButtonStyle}>
-              <Button
+              <CustomButton
+                text='Cancel'
+                type='emphasized'
                 onPress={() => setModalVisible(!modalVisible)}
-                title='Hide Image'
-              ></Button>
+              />
             </View>
           </View>
         </View>
@@ -278,9 +274,14 @@ const SessionDetails = ({ route, navigation }) => {
                               library='AntDesign'
                               noTouchOpacity
                             />
-                            <Text style={styles.infoCardInner}>
-                              {humanDateString(new Date(session.startDate))} |{' '}
-                              {humanTimeString(new Date(session.startDate))}
+                            <Text style={styles.attributeText}>
+                              {humanDateString(
+                                new Date(session.startDate + 'Z')
+                              )}{' '}
+                              |{' '}
+                              {humanTimeString(
+                                new Date(session.startDate + 'Z')
+                              )}
                             </Text>
                           </View>
                           <View style={styles.attribute}>
@@ -290,7 +291,7 @@ const SessionDetails = ({ route, navigation }) => {
                               library='AntDesign'
                               noTouchOpacity
                             />
-                            <Text style={styles.infoCardInner}>
+                            <Text style={styles.attributeText}>
                               {session.status == 'COMPLETED'
                                 ? getTimeDuration(
                                     session.startDate,
@@ -323,26 +324,49 @@ const SessionDetails = ({ route, navigation }) => {
                         </View>
 
                         {incidents.length > 0 && (
-                          <Text style={styles.incidentsTitle}>
-                            List of Incidents
+                          <Text
+                            style={[
+                              styles.incidentsTitle,
+                              { color: context.primaryColour },
+                            ]}
+                          >
+                            Incidents History
                           </Text>
                         )}
                       </>
                     }
                     data={incidents}
+                    style
                     renderItem={({ item }) => {
                       return (
                         <>
-                          <View style={styles.incidentButtonStyle}>
-                            <Button
-                              onPress={() => {
-                                setModalVisible(true);
-                                setIncidentImage(item.uri);
-                              }}
-                              title={item.classification}
-                            ></Button>
-                          </View>
-                          <View style={{ height: 20 }} />
+                          <CustomCard
+                            outerStyle={[styles.listCard]}
+                            innerStyle={styles.infoCardInner}
+                            onPress={() => {
+                              setModalVisible(true);
+                              setIncidentImage(item.uri);
+                            }}
+                          >
+                            <View style={styles.textContainer}>
+                              <Text
+                                style={[
+                                  styles.incidentTime,
+                                  { color: context.tertiaryColour },
+                                ]}
+                              >
+                                {humanTimeString(new Date(item.date + 'Z'))}
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.incidentType,
+                                  { color: context.secondaryColour },
+                                ]}
+                              >
+                                {item.classification}
+                              </Text>
+                            </View>
+                          </CustomCard>
                         </>
                       );
                     }}
@@ -391,21 +415,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3f2021',
   },
-  infoCardOuter: {
-    marginVertical: 5,
-    padding: 15,
-    // borderRadius: 10,
-    alignSelf: 'center',
-  },
-  infoCardInner: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: 20,
-    height: 35,
-    marginLeft: 10,
-    textAlignVertical: 'center',
-  },
   attribute: {
     display: 'flex',
     flexDirection: 'row',
@@ -418,10 +427,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   incidentsTitle: {
-    fontSize: 25,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    fontSize: 18,
+    fontWeight: '800',
     alignSelf: 'center',
+    marginBottom: 20,
   },
   incidentsView: {
     marginTop: 25,
@@ -450,16 +459,41 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   flatListContainer: {
-    width: '85%',
-    justifyContent: 'space-around',
+    flex: 1,
+    width: '100%',
     alignSelf: 'center',
-  },
-  incidentButtonStyle: {
-    paddingLeft: 8,
-    paddingRight: 8,
   },
   hideButtonStyle: {
     marginTop: 19,
+  },
+  listCard: {
+    marginVertical: 10,
+    paddingVertical: 5,
+    width: '90%',
+    borderRadius: 20,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  infoCardOuter: {
+    width: '100%',
+    marginBottom: 10,
+    padding: 15,
+    alignSelf: 'center',
+  },
+  infoCardInner: {
+    height: 70,
+    alignItems: 'flex-start',
+    paddingLeft: 20,
+  },
+  textContainer: {
+    alignItems: 'flex-start',
+  },
+  incidentTime: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  incidentType: {
+    fontSize: 16,
   },
 });
 
