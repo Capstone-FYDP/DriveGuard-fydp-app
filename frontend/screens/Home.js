@@ -7,6 +7,7 @@ import Toast from "react-native-toast-message";
 import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
 import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 
 const Home = () => {
   const context = useContext(MainContext);
@@ -16,6 +17,7 @@ const Home = () => {
   const [graphData, setGraphData] = useState([]);
   const screenWidth = Dimensions.get("window").width;
   const pastDays = 10;
+  const isFocused = useIsFocused();
 
   const DashboardCard = ({ item }) => {
     return (
@@ -71,7 +73,7 @@ const Home = () => {
             return item.numOfIncidents;
           })
           .slice(0, pastDays);
-        setGraphData(pastSessions);
+        setGraphData(pastSessions.reverse());
       }
     } catch (error) {
       console.error(error);
@@ -134,8 +136,10 @@ const Home = () => {
       setLoading(false);
     }
 
-    fetchDashboardData();
-  }, []);
+    if (isFocused) {
+      fetchDashboardData();
+    }
+  }, [isFocused]);
 
   return (
     <View

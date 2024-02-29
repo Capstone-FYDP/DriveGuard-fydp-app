@@ -110,7 +110,7 @@ const SessionDetails = ({ route, navigation }) => {
               const dateA = a.date;
               const dateB = b.date;
 
-              if (dateA > dateB) {
+              if (dateA < dateB) {
                 return -1;
               }
               return 1;
@@ -135,8 +135,8 @@ const SessionDetails = ({ route, navigation }) => {
   }, [isFocused]);
 
   const getTimeDuration = (startDate, endDate) => {
-    let start = new Date(startDate);
-    let end = new Date(endDate);
+    let start = new Date(startDate + 'Z');
+    let end = new Date(endDate + 'Z');
     const totalMin = Math.abs(start.getTime() - end.getTime()) / (1000 * 60);
 
     const hours = totalMin / 60;
