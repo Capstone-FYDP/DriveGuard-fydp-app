@@ -4,8 +4,6 @@ import { StyleSheet, View } from "react-native";
 import TabButton from "./TabButton";
 
 const CustomTabBar = ({ state, navigation }) => {
-  const [selected, setSelected] = useState("Home");
-
   const context = useContext(MainContext);
 
   const capitalize = (word) => {
@@ -16,11 +14,11 @@ const CustomTabBar = ({ state, navigation }) => {
   const containerClass = "container" + theme;
 
   const handleSelectedTab = (currentTab) =>
-    currentTab === selected ? context.primaryColour : "#bdbdbd";
+    currentTab === context.selectedPage ? context.primaryColour : "#bdbdbd";
 
   const handlePress = (currentTab, index) => {
     if (state.index !== index) {
-      setSelected(currentTab);
+      context.setSelectedPage(currentTab);
       navigation.navigate(currentTab);
     }
   };

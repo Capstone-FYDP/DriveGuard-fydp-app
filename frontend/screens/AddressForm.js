@@ -35,6 +35,8 @@ const AddressForm = ({ navigation }) => {
       }
       setLoading(false);
     } else {
+      setLoading(false);
+      context.setSelectedPage("Trips")
       navigation.navigate("StartSession", {
         destination: destination,
       });
