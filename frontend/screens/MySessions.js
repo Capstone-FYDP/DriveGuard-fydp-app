@@ -41,25 +41,25 @@ const MySessions = ({ navigation }) => {
           type: "error",
         });
       } else {
-        setSessions(
-          json.sessionData
-            .map((item) => {
-              return {
-                ...item,
-                startDate: new Date(item.startDate + "Z"),
-                endDate: new Date(item.endDate + "Z"),
-              };
-            })
-            .sort((a, b) => {
-              // Put whatevers active at the top first
-              if (a.status == "ACTIVE" && b.status != "ACTIVE") return 1;
-              if (a.status != "ACTIVE" && b.status == "ACTIVE") return -1;
-              // Sort in descending order from latest to oldest
-              if (a.status == "ACTIVE" && b.status == "ACTIVE")
-                return a.startDate - b.startDate;
-              return a.endDate - b.endDate;
-            })
-        );
+        const sessionsApiData = json.sessionData.map((item) => {
+          return {
+            ...item,
+            startDate: new Date(item.startDate + "Z"),
+            endDate: new Date(item.endDate + "Z"),
+          };
+        })
+        const sessionsList = [
+          sessionsApiData.filter((data) => data.status == "ACTIVE")
+                            .reduce((prev, current) => (prev && prev.startDate > current.startDate) ? prev : current),
+          ...sessionsApiData.filter((data) => data.status != "ACTIVE")
+                            .sort((a, b) => {
+                              if (a.startDate > b.startDate) { 
+                                return -1
+                              }
+                              return 1
+                            })
+        ]
+        setSessions(sessionsList);
       }
     } catch (error) {
       console.error(error);
@@ -104,7 +104,7 @@ const MySessions = ({ navigation }) => {
       ) : (
         <View style={styles.flatListContainer}>
           <FlatList
-            data={sessions.reverse()}
+            data={sessions}
             renderItem={({ item }) => {
               return (
                 <>
@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
   },
   headerTitle: {
     fontSize: 30,

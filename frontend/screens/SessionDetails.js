@@ -92,12 +92,17 @@ const SessionDetails = ({ route, navigation }) => {
       const json = await response.json();
 
       if (json.message) {
-        Toast.show({
-          text1: 'Error',
-          text2: json.message,
-          type: 'error',
-        });
+        if (json.message == "You do not have session data") {
+          setIncidents([])
+        } else {
+          Toast.show({
+            text1: 'Error',
+            text2: json.message,
+            type: 'error',
+          });
+        }
       } else {
+        console.log(json.incidentData)
         setIncidents(
           json.incidentData
             .map((item) => {
@@ -257,6 +262,24 @@ const SessionDetails = ({ route, navigation }) => {
                                 longitude: coords[coords.length - 1].longitude,
                               }}
                             />
+                            {incidents.map((incident, i) => {
+                              return (
+                                <Marker
+                                  key={i}
+                                  coordinate={{
+                                    latitude: incident.lat,
+                                    longitude: incident.long,
+                                  }}
+                                  title={incident.classification}
+                                  description={humanTimeString(new Date(incident.date + 'Z'))}
+                                  onCalloutPress={() => {
+                                    setModalVisible(true);
+                                    setIncidentImage(incident.uri);
+                                  }}
+                                  pinColor='gold'
+                                />
+                              )
+                            })}
                             <Polyline coordinates={coords} strokeWidth={5} />
                           </MapView>
                         )}

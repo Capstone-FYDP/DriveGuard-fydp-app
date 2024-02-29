@@ -2,8 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import CustomButton from "../components/button/custom-button";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import { MainContext } from "../context/MainContext";
-import { StatusBar } from "expo-status-bar";
 import { validate } from "validate.js";
 import addressValidation from "../validation/address-validation";
 import Toast from "react-native-toast-message";
@@ -13,6 +13,7 @@ const AddressForm = ({ navigation }) => {
   const context = useContext(MainContext);
   const GOOGLE_PLACES_API_KEY = "AIzaSyDxFN9yluWMaEqBcT8ey_GOtuGmd_zGQio";
   const [destination, setDestination] = useState([]);
+  const [start, setStart] = useState([]);
   const [destAddress, setdestAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const errorCheckOrder = ["destAddress"];
@@ -46,6 +47,29 @@ const AddressForm = ({ navigation }) => {
     <View
       style={[styles.container, { backgroundColor: context.screenBackground }]}
     >
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        showsUserLocation={true}
+        onUserLocationChange={(location) => {
+          if (start.length == 0) {
+            setStart([location.nativeEvent.coordinate.longitude, location.nativeEvent.coordinate.latitude])
+          }
+        }}
+        style={styles.mapStyle}
+        region={(start.length > 0 || destination.length > 0) ? {
+          latitude: destination[1] || start[1],
+          longitude: destination[0] || start[0],
+          latitudeDelta: 0.007,
+          longitudeDelta: 0.007,
+        } : undefined}
+      >
+        {destination.length > 0 && <Marker
+          coordinate={{
+            latitude: destination[1],
+            longitude: destination[0],
+          }}
+        />}
+      </MapView>
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
           <Text
@@ -104,8 +128,6 @@ const AddressForm = ({ navigation }) => {
           />
         </View>
       </View>
-
-      <StatusBar style="auto" />
     </View>
   );
 };
@@ -113,13 +135,26 @@ const AddressForm = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  promptContainer: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    margin: 10,
+    elevation: 3,
+  },
+  autoComplete: {
+    maxHeight: '100%',
+    flex: 1,
+    flexGrow: 1,
   },
   upperContainer: {
     width: "100%",
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingTop: 20,
+    pointerEvents: 'none',
+    marginTop: 10,
   },
   inputsWrapper: {
     flex: 1,
@@ -135,12 +170,19 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
     height: 60,
+    pointerEvents: 'none',
   },
   headerTitle: {
     fontSize: 30,
     fontWeight: "600",
+  },
+  mapStyle: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
 });
 
