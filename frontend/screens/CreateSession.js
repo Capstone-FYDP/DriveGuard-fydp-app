@@ -57,14 +57,18 @@ const StartNewSession = ({ route, navigation }) => {
   const alertPlayingRef = useRef(alertPlaying)
   alertPlayingRef.current = alertPlaying
 
-  const distractedAlertSound = new Sound("distracted_alert.mp3", Sound.MAIN_BUNDLE, (error) => {
-    if (error) {
-      console.log('failed to load the sound', error);
-      return
-    }
-    distractedAlertSound.setNumberOfLoops(-1)
-    console.log('duration in seconds: ' + distractedAlertSound.getDuration() + 'number of channels: ' + distractedAlertSound.getNumberOfChannels());
-  })
+  const distractedAlertSound = useRef();
+
+  useEffect(() => {
+    distractedAlertSound.current = new Sound("distracted_alert.mp3", Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('failed to load the sound', error);
+        return
+      }
+      distractedAlertSound.current.setNumberOfLoops(-1)
+      console.log('duration in seconds: ' + distractedAlertSound.current.getDuration() + 'number of channels: ' + distractedAlertSound.current.getNumberOfChannels());
+    })
+  }, [])
 
   useEffect(() => {
     (async () => {
@@ -144,9 +148,9 @@ const StartNewSession = ({ route, navigation }) => {
       // Play distracted driving alert
       if (!alertPlayingRef.current) {
         setAlertPlaying(true)
-        distractedAlertSound.play()
+        distractedAlertSound.current.play()
         setTimeout(() => {
-          distractedAlertSound.stop(() => {
+          distractedAlertSound.current.stop(() => {
             setAlertPlaying(false)
           })
         }, 5000)
