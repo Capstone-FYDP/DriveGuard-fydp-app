@@ -1,6 +1,5 @@
 import React, { useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StatusBar } from "expo-status-bar";
 import { MainContext } from "../context/MainContext";
 import { StyleSheet, Text, View } from "react-native";
 import CustomButton from "../components/button/custom-button";
@@ -32,7 +31,6 @@ export default function Profile({ navigation }) {
           onPress={() => removeToken().then(navigation.navigate("Signin"))}
         />
       </View>
-      <StatusBar style="auto" />
     </View>
   );
 }
@@ -59,7 +57,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
   },
   headerTitle: {
     fontSize: 30,

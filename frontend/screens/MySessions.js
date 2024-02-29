@@ -53,7 +53,6 @@ const MySessions = ({ navigation }) => {
                             .reduce((prev, current) => (prev && prev.startDate > current.startDate) ? prev : current),
           ...sessionsApiData.filter((data) => data.status != "ACTIVE")
                             .sort((a, b) => {
-                              console.log(a.startDate)
                               if (a.startDate > b.startDate) { 
                                 return -1
                               }
@@ -153,7 +152,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
   },
   headerTitle: {
     fontSize: 30,

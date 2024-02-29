@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Stack } from "./context/MainContext";
+import { MainContext } from './context/MainContext';
 import { NavigationContainer } from "@react-navigation/native";
 import Navbar from "./components/Navbar/Navbar";
+import { StatusBar } from "expo-status-bar";
 import AuthenticationScreens from "./screens/authenticationScreens/exportAuthenticationScreens";
 import CustomToastAlert from "./components/alerts/custom-toast-alert";
 import { useFonts } from "expo-font";
@@ -17,6 +19,8 @@ export default function MainCode() {
     "Inter-Light": require("./assets/fonts/Inter-Light.ttf"),
     "Oxygen-Light": require("./assets/fonts/Oxygen-Light.ttf"),
   });
+
+  const context = useContext(MainContext);
 
   return (
     loaded && (
@@ -41,6 +45,7 @@ export default function MainCode() {
             ></Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
+        <StatusBar style="light" backgroundColor={context.secondaryColour} translucent={false}/>
         <CustomToastAlert />
       </>
     )

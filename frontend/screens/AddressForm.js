@@ -4,7 +4,6 @@ import CustomButton from "../components/button/custom-button";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import { MainContext } from "../context/MainContext";
-import { StatusBar } from "expo-status-bar";
 import { validate } from "validate.js";
 import addressValidation from "../validation/address-validation";
 import Toast from "react-native-toast-message";
@@ -129,8 +128,6 @@ const AddressForm = ({ navigation }) => {
           />
         </View>
       </View>
-
-      <StatusBar style="auto" />
     </View>
   );
 };
@@ -156,8 +153,8 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingTop: 20,
     pointerEvents: 'none',
+    marginTop: 10,
   },
   inputsWrapper: {
     flex: 1,
@@ -173,7 +170,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 0,
     height: 60,
     pointerEvents: 'none',
   },
