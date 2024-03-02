@@ -1,22 +1,36 @@
-import React, { useContext, useState, useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import CustomButton from "../components/button/custom-button";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import CustomButton from '../components/button/custom-button';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import MapView, { PROVIDER_GOOGLE, Marker } from 'react-native-maps';
-import { MainContext } from "../context/MainContext";
-import { validate } from "validate.js";
-import addressValidation from "../validation/address-validation";
-import Toast from "react-native-toast-message";
-import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
+import { MainContext } from '../context/MainContext';
+import { validate } from 'validate.js';
+import addressValidation from '../validation/address-validation';
+import Toast from 'react-native-toast-message';
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import * as Location from 'expo-location';
 
 const AddressForm = ({ navigation }) => {
   const context = useContext(MainContext);
-  const GOOGLE_PLACES_API_KEY = "AIzaSyDxFN9yluWMaEqBcT8ey_GOtuGmd_zGQio";
+  const GOOGLE_PLACES_API_KEY = 'AIzaSyDxFN9yluWMaEqBcT8ey_GOtuGmd_zGQio';
   const [destination, setDestination] = useState([]);
   const [start, setStart] = useState([]);
-  const [destAddress, setdestAddress] = useState("");
+  const [destAddress, setdestAddress] = useState('');
   const [loading, setLoading] = useState(false);
-  const errorCheckOrder = ["destAddress"];
+  const errorCheckOrder = ['destAddress'];
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show({
+          text1: 'Error',
+          text2: 'Permission to access location was denied',
+          type: 'error',
+        });
+      }
+    })();
+  });
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -27,9 +41,9 @@ const AddressForm = ({ navigation }) => {
       for (let error of errorCheckOrder) {
         if (validationResult[error]) {
           Toast.show({
-            text1: "Error",
+            text1: 'Error',
             text2: validationResult[error][0],
-            type: "error",
+            type: 'error',
           });
           break;
         }
@@ -37,8 +51,8 @@ const AddressForm = ({ navigation }) => {
       setLoading(false);
     } else {
       setLoading(false);
-      context.setSelectedPage("Trips")
-      navigation.navigate("StartSession", {
+      context.setSelectedPage('Trips');
+      navigation.navigate('StartSession', {
         destination: destination,
       });
     }
@@ -52,23 +66,32 @@ const AddressForm = ({ navigation }) => {
         showsUserLocation={true}
         onUserLocationChange={(location) => {
           if (start.length == 0) {
-            setStart([location.nativeEvent.coordinate.longitude, location.nativeEvent.coordinate.latitude])
+            setStart([
+              location.nativeEvent.coordinate.longitude,
+              location.nativeEvent.coordinate.latitude,
+            ]);
           }
         }}
         style={styles.mapStyle}
-        region={(start.length > 0 || destination.length > 0) ? {
-          latitude: destination[1] || start[1],
-          longitude: destination[0] || start[0],
-          latitudeDelta: 0.007,
-          longitudeDelta: 0.007,
-        } : undefined}
+        region={
+          start.length > 0 || destination.length > 0
+            ? {
+                latitude: destination[1] || start[1],
+                longitude: destination[0] || start[0],
+                latitudeDelta: 0.007,
+                longitudeDelta: 0.007,
+              }
+            : undefined
+        }
       >
-        {destination.length > 0 && <Marker
-          coordinate={{
-            latitude: destination[1],
-            longitude: destination[0],
-          }}
-        />}
+        {destination.length > 0 && (
+          <Marker
+            coordinate={{
+              latitude: destination[1],
+              longitude: destination[0],
+            }}
+          />
+        )}
       </MapView>
       <View style={styles.upperContainer}>
         <View style={styles.textWrapper}>
@@ -84,7 +107,7 @@ const AddressForm = ({ navigation }) => {
           placeholder="Enter Location"
           minLength={2}
           autoFocus={false}
-          returnKeyType={"default"}
+          returnKeyType={'default'}
           fetchDetails={true}
           onPress={(data, details = null) => {
             setdestAddress(data.description);
@@ -95,11 +118,11 @@ const AddressForm = ({ navigation }) => {
           }}
           query={{
             key: GOOGLE_PLACES_API_KEY,
-            language: "en",
+            language: 'en',
           }}
           styles={{
             textInputContainer: {
-              backgroundColor: "rgba(0,0,0,0)",
+              backgroundColor: 'rgba(0,0,0,0)',
             },
             textInput: {
               marginLeft: 20,
@@ -120,7 +143,7 @@ const AddressForm = ({ navigation }) => {
               loading ? (
                 <LoadingIndicator color="white" isAnimating={true} />
               ) : (
-                "Start Trip"
+                'Start Trip'
               )
             }
             type="emphasized"
@@ -149,33 +172,33 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   upperContainer: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     pointerEvents: 'none',
     marginTop: 10,
   },
   inputsWrapper: {
     flex: 1,
-    height: "100%",
+    height: '100%',
   },
   inputContainer: {
-    width: "80%",
-    alignSelf: "center",
+    width: '80%',
+    alignSelf: 'center',
     marginVertical: 20,
   },
   textWrapper: {
-    width: "85%",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+    width: '85%',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 60,
     pointerEvents: 'none',
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   mapStyle: {
     width: '100%',

@@ -1,5 +1,5 @@
 {
-  "name": "fydp-app",
+  "name": "DriveGuard",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --dev-client",
