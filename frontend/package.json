@@ -33,7 +33,7 @@
     "react-native-google-places-autocomplete": "^2.5.6",
     "react-native-maps": "^1.7.1",
     "react-native-modal-datetime-picker": "^17.0.0",
-    "react-native-reanimated": "^3.3.0",
+    "react-native-reanimated": "^3.5.4",
     "react-native-safe-area-context": "4.6.3",
     "react-native-screens": "^3.19.0",
     "react-native-sound": "^0.11.2",
@@ -42,10 +42,9 @@
     "react-native-toast-message": "^2.1.5",
     "react-native-triangle": "^0.0.9",
     "react-native-vector-icons": "^9.2.0",
-    "react-native-vision-camera": "github:mrousavy/react-native-vision-camera#d62a2cd",
-    "react-native-worklets": "github:chrfalch/react-native-worklets#3ac2fbb",
+    "react-native-vision-camera": "^3.9.0",
+    "react-native-worklets-core": "^0.3.0",
     "rnc-mapbox-nav": "^0.1.1",
-    "string-hash-64": "^1.0.3",
     "validate.js": "^0.13.1"
   },
   "devDependencies": {

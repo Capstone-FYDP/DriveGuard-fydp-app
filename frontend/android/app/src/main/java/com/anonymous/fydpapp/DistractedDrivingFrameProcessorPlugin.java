@@ -1,19 +1,21 @@
-package com.anonymous.fydpapp.distracteddrivingframeprocessor;
+package com.anonymous.fydpapp;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.media.Image;
 import android.util.Base64;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.camera.core.ImageProxy;
 
-import com.facebook.react.bridge.ReadableNativeMap;
-import com.facebook.react.bridge.WritableNativeArray;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.google.android.gms.tflite.client.TfLiteInitializationOptions;
 import com.google.android.gms.tflite.gpu.support.TfLiteGpu;
 import com.mrousavy.camera.frameprocessor.Frame;
 import com.mrousavy.camera.frameprocessor.FrameProcessorPlugin;
+import com.mrousavy.camera.frameprocessor.VisionCameraProxy;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.label.Category;
@@ -24,53 +26,50 @@ import org.tensorflow.lite.task.gms.vision.classifier.ImageClassifier;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
-
-import javax.annotation.Nullable;
+import java.util.Map;
 
 import io.github.crow_misia.libyuv.AbgrBuffer;
 import io.github.crow_misia.libyuv.FilterMode;
 import io.github.crow_misia.libyuv.RotateMode;
+import io.github.crow_misia.libyuv.ext.ImageExt;
 import io.github.crow_misia.libyuv.ext.ImageProxyExt;
 
 public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin {
   ImageClassifier imageClassifier = null;
+  final int IMAGE_ROTATION = 270;
   @Override
-  public Object callback(@Nullable Frame frame, @Nullable ReadableNativeMap params) {
+  public Object callback(@NotNull Frame frame, @Nullable Map<String, Object> params) {
     // code goes here
-    WritableNativeArray array = new WritableNativeArray();
-    if (frame == null) {
-      array.pushString("Error: Null frame");
-      return array;
-    }
+    Map<String, Object> map = new HashMap<>();
     if (imageClassifier == null) {
-      array.pushString("Error: Image classifier not ready");
-      return array;
+      map.put("error", "Error: Image classifier not ready");
+      return map;
     }
-    ImageProxy image = frame.getImageProxy();
+    Image image = frame.getImage();
 
     // Determine which type of YUV_420_888 image this is (I420, NV12, NV21) and handle
     // the ImageProxy accordingly. Regardless of which type, convert it to NV21.
     AbgrBuffer abgrBuffer = AbgrBuffer.Factory.allocate(image.getWidth(), image.getHeight());
     
     if (YuvFormatDifferentiator.isI420(image)) {
-      ImageProxyExt.toI420Buffer(image).convertTo(abgrBuffer);
+      ImageExt.toI420Buffer(image).convertTo(abgrBuffer);
     } else if (YuvFormatDifferentiator.isNV12(image)) {
-      ImageProxyExt.toNv12Buffer(image).convertTo(abgrBuffer);
+      ImageExt.toNv12Buffer(image).convertTo(abgrBuffer);
     } else if (YuvFormatDifferentiator.isNV21(image)){
-      ImageProxyExt.toNv21Buffer(image).convertTo(abgrBuffer);
+      ImageExt.toNv21Buffer(image).convertTo(abgrBuffer);
     } else {
-      array.pushString("Error: Invalid image type");
-      return array;
+      map.put("error", "Error: Invalid image type");
+      return map;
     }
 
     // Rotate image due to android capture orientation
-    int imageRotation = image.getImageInfo().getRotationDegrees();
-    int rotatedWidth = imageRotation % 180 == 0 ? image.getWidth() : image.getHeight();
-    int rotatedHeight = imageRotation % 180 == 0 ? image.getHeight() : image.getWidth();
+    int rotatedWidth = IMAGE_ROTATION % 180 == 0 ? image.getWidth() : image.getHeight();
+    int rotatedHeight = IMAGE_ROTATION % 180 == 0 ? image.getHeight() : image.getWidth();
     AbgrBuffer abgrBufferRotated = AbgrBuffer.Factory.allocate(rotatedWidth, rotatedHeight);
 
-    abgrBuffer.rotate(abgrBufferRotated, getRotateMode(image.getImageInfo().getRotationDegrees()));
+    abgrBuffer.rotate(abgrBufferRotated, getRotateMode(IMAGE_ROTATION));
 
     // Scale image to required size for ML model
     final int targetWidth = 224;
@@ -78,8 +77,8 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     float xScale = (float) targetWidth / rotatedWidth;
     float yScale = (float) targetHeight / rotatedHeight;
     float scale = Math.max(xScale, yScale);
-    int scaledWidth = (int)(scale*rotatedWidth);
-    int scaledHeight = (int)(scale*rotatedHeight);
+    int scaledWidth = (int) Math.ceil(scale*rotatedWidth);
+    int scaledHeight = (int) Math.ceil(scale*rotatedHeight);
     AbgrBuffer abgrBufferScaled = AbgrBuffer.Factory.allocate(scaledWidth, scaledHeight);
 
     abgrBufferRotated.scale(abgrBufferScaled, FilterMode.BILINEAR);
@@ -96,14 +95,7 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     abgrBitmapScaled.recycle();
 
     List<Classifications> classificationsList = imageClassifier.classify(TensorImage.fromBitmap(abgrBitmapCropped));
-//    for (Classifications classifications : classificationsList) {
-//      Log.d("DistractedDriving", "classification:");
-//      for (Category category : classifications.getCategories()) {
-//        Log.d("DistractedDriving", String.format("class: %s, score: %f", category.getDisplayName(), category.getScore()));
-//      }
-//    }
 
-    array.pushNull();
     if (classificationsList.size() > 0 && classificationsList.get(0).getCategories().size() > 0) {
       Category classification = classificationsList.get(0).getCategories().get(0);
       if (classification.getScore() > 0.7) {
@@ -111,15 +103,13 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
         abgrBitmapCropped.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayStream);
         byte[] byteArray = byteArrayStream.toByteArray();
   
-        array.pushString(classification.getLabel());
-        array.pushDouble(classification.getScore());
-        array.pushString(Base64.encodeToString(byteArray, Base64.DEFAULT));
+        map.put("classification", classification.getLabel());
+        map.put("score", (double) classification.getScore());
+        map.put("base64", Base64.encodeToString(byteArray, Base64.DEFAULT));
       }
-    } else {
-      array.pushNull();
     }
     abgrBitmapCropped.recycle();
-    return array;
+    return map;
 
   }
 
@@ -136,8 +126,9 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
     }
   }
 
-  public DistractedDrivingFrameProcessorPlugin(Context context) {
+  public DistractedDrivingFrameProcessorPlugin(VisionCameraProxy proxy, @Nullable Map<String, Object> options) {
     // Initialize Image classifier
+    ReactApplicationContext context = proxy.getContext();
     TfLiteGpu.isGpuDelegateAvailable(context).addOnCompleteListener(gpuTask -> {
       if (gpuTask.isSuccessful()) {
         TfLiteInitializationOptions.Builder tfLiteInitializationOptionsBuilder = TfLiteInitializationOptions.builder();
@@ -152,14 +143,14 @@ public class DistractedDrivingFrameProcessorPlugin extends FrameProcessorPlugin 
               if (gpuTask.getResult()) {
                 baseOptionsBuilder = baseOptionsBuilder.useGpu();
               }
-              ImageClassifier.ImageClassifierOptions options =
+              ImageClassifier.ImageClassifierOptions classifierOptions =
                       ImageClassifier.ImageClassifierOptions.builder()
                               .setBaseOptions(baseOptionsBuilder.build())
                               .setMaxResults(1)
                               .build();
               try {
                 imageClassifier = ImageClassifier.createFromFileAndOptions(
-                        context, "drive_guard_model_int8.tflite", options);
+                        context, "drive_guard_model_int8.tflite", classifierOptions);
               } catch (IOException e) {
                 Log.e("DistractedDriving", String.format("Error creating image classifier: %s", e.getMessage()));
               }

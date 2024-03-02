@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
-  useCameraDevices,
+  useCameraDevice,
   useFrameProcessor,
-  Camera,
   runAtTargetFps,
-} from "react-native-vision-camera";
-import { StyleSheet, View, SafeAreaView } from "react-native";
-import Sound from "react-native-sound";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Toast from "react-native-toast-message";
-import { MainContext } from "../context/MainContext";
-import LoadingIndicator from "../components/loadingIndicator/loadingIndicator";
-import { useIsFocused } from "@react-navigation/native";
-import { CardAnimationContext } from "@react-navigation/stack";
-import { toBase64 } from "../frame-processors/DistractedDrivingFrameProcessorPlugin";
-import * as Location from "expo-location";
-import IconBadge from "../components/iconBadge/custom-iconBadge";
-import { capitalize } from "validate.js";
-import { mapClassToLabel } from "../utils/string-utils";
-import MapboxNavigation from "rnc-mapbox-nav";
-import { getDistance } from "geolib";
+} from 'react-native-vision-camera';
+import { Camera } from 'react-native-vision-camera';
+import { StyleSheet, View, SafeAreaView } from 'react-native';
+import Sound from 'react-native-sound';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import { MainContext } from '../context/MainContext';
+import LoadingIndicator from '../components/loadingIndicator/loadingIndicator';
+import { useIsFocused } from '@react-navigation/native';
+import { CardAnimationContext } from '@react-navigation/stack';
+import { toBase64 } from '../frame-processors/DistractedDrivingFrameProcessorPlugin';
+import * as Location from 'expo-location';
+import IconBadge from '../components/iconBadge/custom-iconBadge';
+import { capitalize } from 'validate.js';
+import { mapClassToLabel } from '../utils/string-utils';
+import MapboxNavigation from 'rnc-mapbox-nav';
+import { getDistance } from 'geolib';
 
 const StartNewSession = ({ route, navigation }) => {
   const { destination } = route.params;
@@ -30,7 +30,7 @@ const StartNewSession = ({ route, navigation }) => {
   sessionIdRef.current = sessionId;
   //const [buttonLoading, setButtonLoading] = useState(false);
   const [hasCameraPermissions, setHasCameraPermissions] = useState(false);
-  const [classification, setClassification] = useState("");
+  const [classification, setClassification] = useState('');
   const classRef = useRef(classification);
   classRef.current = classification;
   const isFocused = useIsFocused();
@@ -48,9 +48,9 @@ const StartNewSession = ({ route, navigation }) => {
 
   const [base64, setBase64] = useState(null);
 
-  // const camera = useRef<Camera>(null)
-  const devices = useCameraDevices();
-  const device = devices.front;
+  const camera = useRef(null);
+  const device = useCameraDevice('front');
+  console;
   // const camera1 = useRef<Camera>(null)
   const [sessionDetails, setSessionDetails] = useState(null);
   const [alertPlaying, setAlertPlaying] = useState(false);
@@ -61,18 +61,18 @@ const StartNewSession = ({ route, navigation }) => {
 
   useEffect(() => {
     distractedAlertSound.current = new Sound(
-      "distracted_alert.mp3",
+      'distracted_alert.mp3',
       Sound.MAIN_BUNDLE,
       (error) => {
         if (error) {
-          console.log("failed to load the sound", error);
+          console.log('failed to load the sound', error);
           return;
         }
         distractedAlertSound.current.setNumberOfLoops(-1);
         console.log(
-          "duration in seconds: " +
+          'duration in seconds: ' +
             distractedAlertSound.current.getDuration() +
-            "number of channels: " +
+            'number of channels: ' +
             distractedAlertSound.current.getNumberOfChannels()
         );
       }
@@ -82,32 +82,32 @@ const StartNewSession = ({ route, navigation }) => {
   useEffect(() => {
     (async () => {
       let cameraStatus = await Camera.getCameraPermissionStatus();
-      if (cameraStatus != "authorized") {
+      if (cameraStatus != 'granted') {
         cameraStatus = await Camera.requestCameraPermission();
-        if (cameraStatus == "denied") {
+        if (cameraStatus == 'denied') {
           Toast.show({
-            text1: "Error",
+            text1: 'Error',
             text2:
-              "Camera permission not granted. Please go to settings and allow camera permissions for this app.",
-            type: "error",
+              'Camera permission not granted. Please go to settings and allow camera permissions for this app.',
+            type: 'error',
           });
         }
       }
-      if (cameraStatus == "authorized") {
-        console.log("camera permission true");
+      if (cameraStatus == 'granted') {
+        console.log('camera permission true');
         setHasCameraPermissions(true);
       }
 
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      if (status !== 'granted') {
         Toast.show({
-          text1: "Error",
-          text2: "Permission to access location was denied",
-          type: "error",
+          text1: 'Error',
+          text2: 'Permission to access location was denied',
+          type: 'error',
         });
       }
       console.log(status);
-      if (status == "granted") {
+      if (status == 'granted') {
         // console.log("Start Location")
         let location = await Location.getCurrentPositionAsync({});
         // console.log("End Location")
@@ -117,7 +117,7 @@ const StartNewSession = ({ route, navigation }) => {
         // let dest = await Location.geocodeAsync("208 sunview");
         // setDestination([dest[0].longitude, dest[0].latitude]);
         // console.log(dest);
-        console.log("Dest Route: ", destination);
+        console.log('Dest Route: ', destination);
         createSession();
       }
     })();
@@ -125,7 +125,7 @@ const StartNewSession = ({ route, navigation }) => {
 
   const getToken = async () => {
     try {
-      return await AsyncStorage.getItem("auth_token");
+      return await AsyncStorage.getItem('auth_token');
     } catch (e) {
       console.log(e);
     }
@@ -149,7 +149,7 @@ const StartNewSession = ({ route, navigation }) => {
 
         Toast.show({
           text1: classif,
-          type: "error",
+          type: 'error',
           autoHide: false,
         });
         ///////////////////////////
@@ -169,7 +169,7 @@ const StartNewSession = ({ route, navigation }) => {
     }
   };
   const resetClassification = async () => {
-    setClassification("");
+    setClassification('');
     Toast.hide();
   };
 
@@ -178,25 +178,29 @@ const StartNewSession = ({ route, navigation }) => {
 
   const frameProcessor = useFrameProcessor(
     (frame) => {
-      "worklet";
+      'worklet';
       runAtTargetFps(1, () => {
-        "worklet";
-        let cur = new Date();
-        const result = toBase64(frame);
-        let end = new Date();
-        console.log(`Image Processor and Classifier RTT: ${end - cur}ms`);
-        if (result[0] != null) {
-          console.log(result[0]);
-          resetClassificationJS();
-        } else if (result[1] != null) {
-          console.log(`class: ${result[1]}, score: ${result[2]}`);
-          if (result[1] == "c0") {
+        'worklet';
+        if (sessionId != null) {
+          let cur = new Date();
+          const result = toBase64(frame);
+          let end = new Date();
+          console.log(`Image Processor and Classifier RTT: ${end - cur}ms`);
+          if (result['error'] != undefined) {
+            console.log(result['error']);
             resetClassificationJS();
+          } else if (result['classification'] != undefined) {
+            console.log(
+              `class: ${result['classification']}, score: ${result['score']}`
+            );
+            if (result['classification'] == 'c0') {
+              resetClassificationJS();
+            } else {
+              processFrameJS(result['classification'], result['base64']);
+            }
           } else {
-            processFrameJS(result[1], result[3]);
+            resetClassificationJS();
           }
-        } else {
-          resetClassificationJS();
         }
       });
     },
@@ -207,10 +211,10 @@ const StartNewSession = ({ route, navigation }) => {
     try {
       const token = await getToken();
       await fetch(context.fetchPath + `api/addIncident`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "x-access-tokens": token,
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
         },
         body: JSON.stringify({
           classification: classification,
@@ -229,10 +233,10 @@ const StartNewSession = ({ route, navigation }) => {
     try {
       const token = await getToken();
       await fetch(context.fetchPath + `api/updateCoords`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          "x-access-tokens": token,
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
         },
         body: JSON.stringify({
           sessionId: sessionIdRef.current,
@@ -252,18 +256,18 @@ const StartNewSession = ({ route, navigation }) => {
     try {
       const token = await getToken();
       const response = await fetch(context.fetchPath + `api/createSession`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "x-access-tokens": token,
+          'Content-Type': 'application/json',
+          'x-access-tokens': token,
         },
         body: JSON.stringify({
-          image: "http://driving_image_url",
+          image: 'http://driving_image_url',
         }),
       });
 
       const json = await response.json();
-      console.log("set session: " + json.message);
+      console.log('set session: ' + json.message);
       setSessionId(json.message);
     } catch (error) {
       console.error(error);
@@ -282,11 +286,11 @@ const StartNewSession = ({ route, navigation }) => {
       const response = await fetch(
         context.fetchPath + `api/endSession/${sessionId}`,
         {
-          method: "GET",
+          method: 'GET',
           headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "x-access-tokens": token,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'x-access-tokens': token,
           },
         }
       );
@@ -295,14 +299,14 @@ const StartNewSession = ({ route, navigation }) => {
 
       if (json.message) {
         Toast.show({
-          text1: "Error",
+          text1: 'Error',
           text2: json.message,
-          type: "error",
+          type: 'error',
         });
       } else {
-        console.log("end session is called!");
+        console.log('end session is called!');
         setSessionId(null);
-        navigation.navigate("SessionDetails", {
+        navigation.navigate('SessionDetails', {
           sessionId: sessionId,
         });
       }
@@ -387,7 +391,7 @@ const StartNewSession = ({ route, navigation }) => {
             // Called when you arrive at the destination.
             if (sessionId != null) {
               endSession();
-              alert("You have reached your destination");
+              alert('You have reached your destination');
             }
           }}
         />
@@ -395,13 +399,10 @@ const StartNewSession = ({ route, navigation }) => {
       {isFocused && device != null && hasCameraPermissions && (
         <View style={styles.cameraStyle}>
           <Camera
-            // ref={camera}
-            // photo={true}
             isActive={true}
             device={device}
             style={styles.camera}
-            preset="cif-352x288"
-            frameProcessor={sessionId != null ? frameProcessor : null}
+            frameProcessor={frameProcessor}
           />
         </View>
       )}
@@ -412,14 +413,14 @@ const StartNewSession = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   createContainer: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mapStyle: {
-    position: "absolute",
+    position: 'absolute',
     zIndex: 150,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   hud: {
     bottom: 0,
@@ -427,35 +428,35 @@ const styles = StyleSheet.create({
   item: {
     padding: 60,
     marginVertical: 30,
-    alignSelf: "center",
-    height: "30%",
+    alignSelf: 'center',
+    height: '30%',
   },
   header: {
     fontSize: 32,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 26,
-    color: "#EF5350",
-    fontWeight: "500",
+    color: '#EF5350',
+    fontWeight: '500',
   },
   upperContainer: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     paddingTop: 20,
     paddingBottom: 10,
   },
   textWrapper: {
-    width: "85%",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+    width: '85%',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 20,
   },
   cameraStyle: {
-    position: "absolute",
+    position: 'absolute',
     width: 5,
     height: 5,
     bottom: 0,
@@ -463,27 +464,27 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   imageStyle: {
-    position: "absolute",
+    position: 'absolute',
     width: 300,
     height: 400,
     bottom: 0,
     right: 0,
     borderTopWidth: 4,
     borderLeftWidth: 4,
-    borderColor: "white",
+    borderColor: 'white',
   },
   camera: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   headerTitle: {
     fontSize: 30,
-    fontWeight: "600",
-    color: "#3f2021",
+    fontWeight: '600',
+    color: '#3f2021',
   },
   lowerOuterContainer: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     borderTopLeftRadius: 25,
@@ -494,27 +495,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   lowerInnerContainer: {
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     minHeight: 400,
   },
   startButton: {
-    position: "absolute",
+    position: 'absolute',
     width: 75,
     bottom: 0,
   },
   rectangle: {
-    width: "100%",
+    width: '100%',
     height: 50,
   },
   semiCircleWrapper: {
-    width: "100%", // half of the image width
+    width: '100%', // half of the image width
     height: 25,
-    backgroundColor: "transparent",
-    overflow: "hidden",
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   semiCircle: {
-    width: "100%",
+    width: '100%',
     height: 50,
     borderRadius: 125, // half of the image width
   },

@@ -1,5 +1,6 @@
-package com.anonymous.fydpapp.distracteddrivingframeprocessor;
+package com.anonymous.fydpapp;
 import android.graphics.ImageFormat;
+import android.media.Image;
 
 import androidx.camera.core.ImageProxy;
 
@@ -7,34 +8,34 @@ import java.nio.ByteBuffer;
 
 public class YuvFormatDifferentiator {
 
-    public static boolean isI420(ImageProxy image) {
+    public static boolean isI420(Image image) {
         return image.getFormat() == ImageFormat.YUV_420_888 &&
                 isPlanesCountValid(image, 3) &&
                 isUVPlanar(image);
     }
 
-    public static boolean isNV12(ImageProxy image) {
-        ImageProxy.PlaneProxy[] planes = image.getPlanes();
+    public static boolean isNV12(Image image) {
+        Image.Plane[] planes = image.getPlanes();
         return image.getFormat() == ImageFormat.YUV_420_888 &&
                 isPlanesCountValid(image, 3) &&
                 planes[2].getPixelStride() == 2 &&
                 isInterleavedWith(planes[2].getBuffer(), planes[1].getBuffer());
     }
 
-    public static boolean isNV21(ImageProxy image) {
-        ImageProxy.PlaneProxy[] planes = image.getPlanes();
+    public static boolean isNV21(Image image) {
+        Image.Plane[] planes = image.getPlanes();
         return image.getFormat() == ImageFormat.YUV_420_888 &&
                 isPlanesCountValid(image, 3) &&
                 planes[2].getPixelStride() == 2 &&
                 isInterleavedWith(planes[1].getBuffer(), planes[2].getBuffer());
     }
 
-    private static boolean isPlanesCountValid(ImageProxy image, int expectedPlanesCount) {
+    private static boolean isPlanesCountValid(Image image, int expectedPlanesCount) {
         return image.getPlanes().length == expectedPlanesCount;
     }
 
-    private static boolean isUVPlanar(ImageProxy image) {
-        ImageProxy.PlaneProxy[] planes = image.getPlanes();
+    private static boolean isUVPlanar(Image image) {
+        Image.Plane[] planes = image.getPlanes();
         return planes[1].getPixelStride() == 1 && planes[2].getPixelStride() == 1;
     }
 
